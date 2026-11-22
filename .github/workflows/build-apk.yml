@@ -1,7 +1,7 @@
 name: Build Android APK
 on:
   push:
-    branches: [ main ]
+    branches: [ main, android-native-compose ]
     paths: ['app/**','index.html','*.gradle','gradle.properties','settings.gradle','.github/workflows/build-apk.yml']
   workflow_dispatch:
 permissions: { contents: read, actions: read }
