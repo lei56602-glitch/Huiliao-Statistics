@@ -19,6 +19,7 @@ class MainActivity : ComponentActivity() {
     private var pendingBytes: ByteArray = byteArrayOf()
     private lateinit var xlsxLauncher: ActivityResultLauncher<String>
     private lateinit var csvLauncher: ActivityResultLauncher<String>
+    private lateinit var backupLauncher: ActivityResultLauncher<String>
     private lateinit var webView: WebView
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -38,7 +39,15 @@ class MainActivity : ComponentActivity() {
             ActivityResultContracts.CreateDocument("text/csv")
         ) { uri -> writeExport(uri) }
 
+        backupLauncher = registerForActivityResult(
+            ActivityResultContracts.CreateDocument("application/json")
+        ) { uri -> writeExport(uri) }
+
         webView = WebView(this)
+        webView.setOnApplyWindowInsetsListener { view, insets ->
+            view.setPadding(0, insets.systemWindowInsetTop, 0, 0)
+            insets
+        }
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = true
@@ -73,6 +82,27 @@ class MainActivity : ComponentActivity() {
 
     // Must be a public class for WebView's JavaScript bridge reflection.
     inner class ExportBridge {
+        @JavascriptInterface
+        fun saveBackup(json: String, fileName: String) {
+            try {
+                if (json.isBlank()) error("备份数据为空")
+                pendingBytes = json.toByteArray(Charsets.UTF_8)
+                val safeName = fileName.substringAfterLast('/').substringAfterLast('\\\\')
+                    .ifBlank { "回收料统计_数据备份.json" }
+                runOnUiThread {
+                    try {
+                        backupLauncher.launch(safeName)
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, "无法启动备份保存：${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "备份准备失败：${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
         @JavascriptInterface
         fun saveRows(rowsJson: String, fileName: String, format: String) {
             try {
