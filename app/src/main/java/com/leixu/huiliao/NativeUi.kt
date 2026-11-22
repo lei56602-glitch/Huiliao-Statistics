@@ -42,7 +42,7 @@ internal fun NativeHuiliaoApp(
     records: List<ProductionRecord>,
     onSaveRecord: (ProductionRecord) -> Unit,
     onDeleteRecord: (String) -> Unit,
-    onExport: (List<List<String>>, Boolean) -> Unit,
+    onExport: (List<List<String>>, Boolean, String) -> Unit,
     onShare: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -87,7 +87,7 @@ internal fun NativeHuiliaoApp(
                     1 -> DashboardPage(records.filter { it.date.startsWith(month) }, lines)
                     2 -> RankPage(records.filter { it.date.startsWith(month) })
                     3 -> WeeklyPage(records.filter { it.date.startsWith(month) }, month)
-                    4 -> RecordPage(records.filter { it.date.startsWith(month) }, query, { query = it }, onDeleteRecord, onExport, onShare)
+                    4 -> RecordPage(records.filter { it.date.startsWith(month) }, query, { query = it }, onDeleteRecord, onExport, onShare, month)
                     else -> ManagePage(lines, personsA, personsB, types, manageTeam, { manageTeam = it },
                         { addTarget = it; addValue = ""; showAddDialog = true },
                         { value -> lines = lines - value; prefs.edit().putString("lines", lines.joinToString("|")).apply() },
