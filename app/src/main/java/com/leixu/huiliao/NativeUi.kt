@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.json.JSONArray
+import org.json.JSONObject
 import java.time.LocalDate
 
 internal val AppBlue = Color(0xFF315FCE)
@@ -43,6 +44,7 @@ internal fun NativeHuiliaoApp(
     var lines by remember { mutableStateOf(prefs.getString("lines", null)?.split("|")?.filter { it.isNotBlank() } ?: DefaultLines) }
     var personsA by remember { mutableStateOf(prefs.getString("personsA", null)?.split("|")?.filter { it.isNotBlank() } ?: listOf("张伟", "李莉")) }
     var personsB by remember { mutableStateOf(prefs.getString("personsB", null)?.split("|")?.filter { it.isNotBlank() } ?: listOf("陈静", "赵雷")) }
+    var types by remember { mutableStateOf(loadTypes(prefs)) }
     var page by remember { mutableIntStateOf(0) }
     var month by remember { mutableStateOf(LocalDate.now().toString().take(7)) }
     var query by remember { mutableStateOf("") }
@@ -75,26 +77,31 @@ internal fun NativeHuiliaoApp(
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
                 when (page) {
-                    0 -> EntryPage(lines, personsA, personsB, onSaveRecord)
+                    0 -> EntryPage(lines, personsA, personsB, types, onSaveRecord)
                     1 -> DashboardPage(records.filter { it.date.startsWith(month) }, lines)
                     2 -> RankPage(records.filter { it.date.startsWith(month) })
                     3 -> WeeklyPage(records.filter { it.date.startsWith(month) })
                     4 -> RecordPage(records.filter { it.date.startsWith(month) }, query, { query = it }, onDeleteRecord, onExport, onShare)
-                    else -> ManagePage(lines, personsA, personsB, manageTeam, { manageTeam = it },
+                    else -> ManagePage(lines, personsA, personsB, types, manageTeam, { manageTeam = it },
                         { addTarget = it; addValue = ""; showAddDialog = true },
                         { value -> lines = lines - value; prefs.edit().putString("lines", lines.joinToString("|")).apply() },
-                        { value -> if (manageTeam == "A班") { personsA = personsA - value; prefs.edit().putString("personsA", personsA.joinToString("|")).apply() } else { personsB = personsB - value; prefs.edit().putString("personsB", personsB.joinToString("|")).apply() } })
+                        { value -> if (manageTeam == "A班") { personsA = personsA - value; prefs.edit().putString("personsA", personsA.joinToString("|")).apply() } else { personsB = personsB - value; prefs.edit().putString("personsB", personsB.joinToString("|")).apply() } },
+                        { category -> types = types - category; persistTypes(types, prefs) },
+                        { category, item -> types = types.toMutableMap().also { it[category] = (it[category] ?: emptyList()) + item }; persistTypes(types, prefs) },
+                        { category, item -> types = types.toMutableMap().also { it[category] = (it[category] ?: emptyList()) - item }; persistTypes(types, prefs) })
                 }
             }
         }
         if (showAddDialog) AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text(if (addTarget == "line") "添加生产线" else "添加人员") },
+            title = { Text(when { addTarget == "line" -> "添加生产线"; addTarget == "person" -> "添加人员"; addTarget == "type" -> "添加异常大类"; else -> "添加异常子项" }) },
             text = { OutlinedTextField(addValue, { addValue = it }, singleLine = true, label = { Text("名称") }) },
             confirmButton = { TextButton(onClick = {
                 val value = addValue.trim()
                 if (value.isNotEmpty()) {
                     if (addTarget == "line" && value !in lines) { lines = lines + value; prefs.edit().putString("lines", lines.joinToString("|")).apply() }
+                    if (addTarget == "type" && value !in types) { types = types + (value to emptyList()); persistTypes(types, prefs) }
+                    if (addTarget.startsWith("subitem:")) { val category = addTarget.substringAfter(":"); types = types.toMutableMap().also { it[category] = (it[category] ?: emptyList()) + value }; persistTypes(types, prefs) }
                     if (addTarget == "person") {
                         if (manageTeam == "A班" && value !in personsA) { personsA = personsA + value; prefs.edit().putString("personsA", personsA.joinToString("|")).apply() }
                         if (manageTeam == "B班" && value !in personsB) { personsB = personsB + value; prefs.edit().putString("personsB", personsB.joinToString("|")).apply() }
@@ -107,7 +114,7 @@ internal fun NativeHuiliaoApp(
 }
 
 @Composable
-private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: List<String>, onSave: (ProductionRecord) -> Unit) {
+private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: List<String>, types: Map<String, List<String>>, onSave: (ProductionRecord) -> Unit) {
     var date by remember { mutableStateOf(LocalDate.now().toString()) }
     var line by remember { mutableStateOf(lines.firstOrNull().orEmpty()) }
     var team by remember { mutableStateOf("A班") }
@@ -134,7 +141,7 @@ private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: Lis
             Text("最终不合理数量：%.2f KG".format(total), color = AppBlue, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
         SectionCard("异常类型（多选）") {
-            DefaultTypes.forEach { (category, subItems) ->
+            types.forEach { (category, subItems) ->
                 Text(category, fontWeight = FontWeight.SemiBold)
                 subItems.chunked(2).forEach { pair ->
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -254,3 +261,30 @@ internal fun abnormalStats(records: List<ProductionRecord>): List<Pair<String, D
 internal fun parseSubItems(raw: String): List<String> = try {
     val arr = JSONArray(raw); (0 until arr.length()).map { arr.getString(it) }
 } catch (_: Exception) { emptyList() }
+
+private fun loadTypes(prefs: android.content.SharedPreferences): Map<String, List<String>> {
+    val raw = prefs.getString("types", null) ?: prefs.getString("legacy_ab_types", null)
+    if (raw.isNullOrBlank()) return DefaultTypes
+    return try {
+        val array = JSONArray(raw)
+        val result = linkedMapOf<String, List<String>>()
+        for (i in 0 until array.length()) {
+            val obj = array.getJSONObject(i)
+            val items = obj.optJSONArray("subItems") ?: JSONArray()
+            result[obj.optString("name")] = (0 until items.length()).map { items.optString(it) }
+        }
+        if (result.isEmpty()) DefaultTypes else result
+    } catch (_: Exception) { DefaultTypes }
+}
+
+private fun persistTypes(types: Map<String, List<String>>, prefs: android.content.SharedPreferences) {
+    val array = JSONArray()
+    types.forEach { (name, items) ->
+        val obj = JSONObject()
+        obj.put("id", name)
+        obj.put("name", name)
+        obj.put("subItems", JSONArray(items))
+        array.put(obj)
+    }
+    prefs.edit().putString("types", array.toString()).apply()
+}
