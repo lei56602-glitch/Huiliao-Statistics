@@ -10,6 +10,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,13 +48,26 @@ class MainActivity : ComponentActivity() {
             ActivityResultContracts.CreateDocument("application/json")
         ) { uri -> writeExport(uri) }
 
+        // Handle system bars and display cutouts once at the native root.
+        // The handled inset dimensions are zeroed before dispatching to WebView,
+        // so WebView still receives inset-change notifications without applying
+        // the same safe-area padding a second time.
+        val rootContainer = FrameLayout(this)
         webView = WebView(this)
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
-            val statusBarTop = insets.getInsets(
-                androidx.core.view.WindowInsetsCompat.Type.statusBars()
-            ).top
-            view.setPadding(0, statusBarTop, 0, 0)
-            androidx.core.view.WindowInsetsCompat.CONSUMED
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootContainer) { view, windowInsets ->
+            val insetTypes =
+                androidx.core.view.WindowInsetsCompat.Type.systemBars() or
+                    androidx.core.view.WindowInsetsCompat.Type.displayCutout()
+            val safeInsets = windowInsets.getInsets(insetTypes)
+            view.setPadding(
+                safeInsets.left,
+                safeInsets.top,
+                safeInsets.right,
+                safeInsets.bottom
+            )
+            androidx.core.view.WindowInsetsCompat.Builder(windowInsets)
+                .setInsets(insetTypes, androidx.core.graphics.Insets.NONE)
+                .build()
         }
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
@@ -83,7 +97,14 @@ class MainActivity : ComponentActivity() {
                 return true
             }
         }
-        setContentView(webView)
+        rootContainer.addView(
+            webView,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+        setContentView(rootContainer)
         webView.loadUrl("file:///android_asset/index.html")
     }
 
