@@ -87,7 +87,8 @@ internal fun NativeHuiliaoApp(
                         { value -> lines = lines - value; prefs.edit().putString("lines", lines.joinToString("|")).apply() },
                         { value -> if (manageTeam == "A班") { personsA = personsA - value; prefs.edit().putString("personsA", personsA.joinToString("|")).apply() } else { personsB = personsB - value; prefs.edit().putString("personsB", personsB.joinToString("|")).apply() } },
                         { category -> types = types - category; persistTypes(types, prefs) },
-                        { category, item -> types = types.toMutableMap().also { it[category] = (it[category] ?: emptyList()) + item }; persistTypes(types, prefs) },
+                        { addTarget = "type"; addValue = ""; showAddDialog = true },
+                        { target, _ -> addTarget = target; addValue = ""; showAddDialog = true },
                         { category, item -> types = types.toMutableMap().also { it[category] = (it[category] ?: emptyList()) - item }; persistTypes(types, prefs) })
                 }
             }
