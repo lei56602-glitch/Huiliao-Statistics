@@ -214,7 +214,7 @@ private fun DashboardPage(records: List<ProductionRecord>, lines: List<String>) 
 
 @Composable
 private fun RankPage(records: List<ProductionRecord>) {
-    val teams = listOf("A班", "B班").map { it to records.filter { r -> r.team == it }.sumOf { r -> r.totalUnreasonable } }
+    val teams = listOf("A班", "B班").map { it to records.filter { r -> r.team == it }.sumOf { r -> r.totalUnreasonable } }.sortedByDescending { it.second }
     val lines = records.groupBy { it.productionLine }.mapValues { it.value.sumOf { r -> r.totalUnreasonable } }.toList().sortedByDescending { it.second }
     val people = records.groupBy { "${it.team} · ${it.personnel}" }.mapValues { it.value.sumOf { r -> r.totalUnreasonable } }.toList().sortedByDescending { it.second }.take(8)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -234,28 +234,41 @@ private fun RankPage(records: List<ProductionRecord>) {
 }
 
 @Composable
+private data class WeekSummary(val label: String, val a: Double, val b: Double, val count: Int)
+
+@Composable
 private fun WeeklyPage(records: List<ProductionRecord>, month: String) {
     val ym = runCatching { YearMonth.parse(month) }.getOrElse { YearMonth.now() }
     val first = ym.atDay(1)
     val last = ym.atEndOfMonth()
     var monday = first.minusDays((first.dayOfWeek.value - 1).toLong())
-    val weeks = mutableListOf<Triple<String, Double, Double>>()
+    val weeks = mutableListOf<WeekSummary>()
     while (!monday.isAfter(last)) {
         val sunday = monday.plusDays(6)
         val rows = records.filter { r -> runCatching { LocalDate.parse(r.date) }.getOrNull()?.let { !it.isBefore(monday) && !it.isAfter(sunday) } == true }
         val a = rows.filter { it.team == "A班" }.sumOf { it.totalUnreasonable }
         val b = rows.filter { it.team == "B班" }.sumOf { it.totalUnreasonable }
-        weeks.add(Triple("${monday.monthValue}/${monday.dayOfMonth}~${sunday.monthValue}/${sunday.dayOfMonth}", a, b))
+        weeks.add(WeekSummary("${monday.monthValue}/${monday.dayOfMonth}~${sunday.monthValue}/${sunday.dayOfMonth}", a, b, rows.count { it.totalUnreasonable > 0 }))
         monday = monday.plusWeeks(1)
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("每周数据统计对比", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text("自然周（周一至周日）聚合", color = MaterialTheme.colorScheme.onSurfaceVariant)
         WeeklyBarChart(weeks)
-        weeks.forEach { (label, a, b) ->
-            SectionCard(label) { Text("A班：%.2f KG".format(a), color = AppBlue); Text("B班：%.2f KG".format(b), color = TeamOrange); Text("合计：%.2f KG".format(a + b), fontWeight = FontWeight.Bold) }
+        weeks.forEach { week ->
+            SectionCard(week.label) {
+                Text("A班：%.2f KG".format(week.a), color = AppBlue)
+                Text("B班：%.2f KG".format(week.b), color = TeamOrange)
+                Text("合计：%.2f KG · %d 条".format(week.a + week.b, week.count), fontWeight = FontWeight.Bold)
+            }
         }
-        Text("本月总计：%.2f KG · %d 条".format(records.sumOf { it.totalUnreasonable }, records.size), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        val monthA = weeks.sumOf { it.a }
+        val monthB = weeks.sumOf { it.b }
+        SectionCard("本月总计") {
+            Text("A班：%.2f KG".format(monthA), color = AppBlue)
+            Text("B班：%.2f KG".format(monthB), color = TeamOrange)
+            Text("合计：%.2f KG · %d 条".format(monthA + monthB, weeks.sumOf { it.count }), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
@@ -357,8 +370,8 @@ private fun DonutChart(values: List<Pair<String, Double>>) {
 }
 
 @Composable
-private fun WeeklyBarChart(weeks: List<Triple<String, Double, Double>>) {
-    val maxValue = weeks.maxOfOrNull { maxOf(it.second, it.third) }?.coerceAtLeast(1.0) ?: 1.0
+private fun WeeklyBarChart(weeks: List<WeekSummary>) {
+    val maxValue = weeks.maxOfOrNull { maxOf(it.a, it.b) }?.coerceAtLeast(1.0) ?: 1.0
     Canvas(Modifier.fillMaxWidth().height(170.dp)) {
         if (weeks.isEmpty()) return@Canvas
         val base = size.height - 8.dp.toPx()
@@ -366,8 +379,8 @@ private fun WeeklyBarChart(weeks: List<Triple<String, Double, Double>>) {
         val barWidth = (group * 0.22f).coerceAtLeast(4.dp.toPx())
         weeks.forEachIndexed { index, item ->
             val center = group * (index + 0.5f)
-            val aHeight = ((item.second / maxValue) * (base - 8.dp.toPx())).toFloat()
-            val bHeight = ((item.third / maxValue) * (base - 8.dp.toPx())).toFloat()
+            val aHeight = ((item.a / maxValue) * (base - 8.dp.toPx())).toFloat()
+            val bHeight = ((item.b / maxValue) * (base - 8.dp.toPx())).toFloat()
             drawRect(AppBlue, Offset(center - barWidth - 2.dp.toPx(), base - aHeight), Size(barWidth, aHeight))
             drawRect(TeamOrange, Offset(center + 2.dp.toPx(), base - bHeight), Size(barWidth, bHeight))
         }
