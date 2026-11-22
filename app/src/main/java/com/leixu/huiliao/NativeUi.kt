@@ -147,6 +147,7 @@ private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: Lis
     var deductions by remember { mutableStateOf(listOf("0", "0", "0", "0")) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     val people = if (team == "A班") personsA else personsB
+    val context = androidx.compose.ui.platform.LocalContext.current
     val total = ((weight.toDoubleOrNull() ?: 0.0) - deductions.sumOf { it.toDoubleOrNull() ?: 0.0 }).coerceAtLeast(0.0)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard("回收料异常记录") {
@@ -179,6 +180,9 @@ private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: Lis
             if (date.isNotBlank() && line.isNotBlank() && team.isNotBlank() && person.isNotBlank() && selected.isNotEmpty() && total > 0) {
                 onSave(ProductionRecord("${System.currentTimeMillis()}-${(0..9999).random()}", date, line, team, person, model, weight.toDoubleOrNull() ?: 0.0, total, JSONArray(selected.toList()).toString(), java.time.Instant.now().toString()))
                 model = ""; weight = ""; deductions = listOf("0", "0", "0", "0"); selected = emptySet()
+                android.widget.Toast.makeText(context, "提交成功", android.widget.Toast.LENGTH_SHORT).show()
+            } else {
+                android.widget.Toast.makeText(context, "请填写完整信息、选择异常类型，并确保不合理数量大于 0", android.widget.Toast.LENGTH_LONG).show()
             }
         }, modifier = Modifier.fillMaxWidth()) { Text("提交记录") }
     }
@@ -244,7 +248,7 @@ private fun WeeklyPage(records: List<ProductionRecord>, month: String) {
         weeks.forEach { (label, a, b) ->
             SectionCard(label) { Text("A班：%.2f KG".format(a), color = AppBlue); Text("B班：%.2f KG".format(b), color = TeamOrange); Text("合计：%.2f KG".format(a + b), fontWeight = FontWeight.Bold) }
         }
-        Text("本月总计：%.2f KG".format(records.sumOf { it.totalUnreasonable }), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("本月总计：%.2f KG · %d 条".format(records.sumOf { it.totalUnreasonable }, records.size), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     }
 }
 
