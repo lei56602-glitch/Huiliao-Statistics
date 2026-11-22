@@ -293,20 +293,19 @@
     pendingExportData = data;
     document.getElementById('exportModal').classList.remove('hidden');
   }
-  async function saveExportFile() {
+  function saveExportFile() {
     if (!pendingExportData) { alert('没有可导出的记录'); return; }
-    if (!window.AndroidExport || !window.AndroidExport.saveFile) {
-      alert('当前环境不支持手机文件保存');
+    if (!window.AndroidExport || !window.AndroidExport.saveRows) {
+      alert('手机文件保存服务未连接，请重新打开应用');
       return;
     }
     const excel = currentFormat === 'excel';
-    const dataUrl = excel ? generateExcel(pendingExportData) : await generateCsv(pendingExportData);
-    const base64 = dataUrl.substring(dataUrl.indexOf(',') + 1);
-    const mime = excel
-      ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      : 'text/csv';
     const filename = '回料异常统计_' + currentViewMonth + (excel ? '.xlsx' : '.csv');
-    window.AndroidExport.saveFile(base64, filename, mime);
+    try {
+      window.AndroidExport.saveRows(JSON.stringify(pendingExportData), filename, excel ? 'xlsx' : 'csv');
+    } catch (error) {
+      alert('导出失败：' + (error && error.message ? error.message : error));
+    }
   }
   function closeExport() { document.getElementById('exportModal').classList.add('hidden'); }
   function setExportFormat(fmt) { currentFormat=fmt; const excelBtn=document.getElementById('switchExcelBtn'), csvBtn=document.getElementById('switchCsvBtn'); if(fmt==='excel'){ excelBtn.className='px-4 py-2 rounded-full bg-primary text-white'; csvBtn.className='px-4 py-2 rounded-full bg-gray-200'; } else { csvBtn.className='px-4 py-2 rounded-full bg-primary text-white'; excelBtn.className='px-4 py-2 rounded-full bg-gray-200'; } }
