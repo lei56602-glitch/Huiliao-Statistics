@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
             try {
                 if (json.isBlank()) error("备份数据为空")
                 pendingBytes = json.toByteArray(Charsets.UTF_8)
-                val safeName = fileName.substringAfterLast('/').substringAfterLast('\\\\')
+                val safeName = fileName.substringAfterLast('/').substringAfterLast('\\')
                     .ifBlank { "回收料统计_数据备份.json" }
                 runOnUiThread {
                     try {
