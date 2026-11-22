@@ -1,30 +1,32 @@
 package com.leixu.huiliao
 
-import android.content.Intent
+import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
+import android.webkit.JavascriptInterface
+import android.webkit.JsResult
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
-    private var pendingExport: ByteArray? = null
+    private var pendingBytes: ByteArray = byteArrayOf()
     private var pendingMime: String = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    private var savedUri: Uri? = null
-    private var savedMime: String = "application/octet-stream"
     private lateinit var xlsxLauncher: ActivityResultLauncher<String>
     private lateinit var csvLauncher: ActivityResultLauncher<String>
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = android.graphics.Color.rgb(247, 248, 252)
-        window.navigationBarColor = android.graphics.Color.rgb(247, 248, 252)
+
+        window.statusBarColor = android.graphics.Color.rgb(248, 250, 252)
+        window.navigationBarColor = android.graphics.Color.rgb(248, 250, 252)
         window.decorView.systemUiVisibility =
             android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
             android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
@@ -32,62 +34,79 @@ class MainActivity : ComponentActivity() {
         xlsxLauncher = registerForActivityResult(
             ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         ) { uri -> writeExport(uri) }
-        csvLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
-            writeExport(uri)
-        }
+        csvLauncher = registerForActivityResult(
+            ActivityResultContracts.CreateDocument("text/csv")
+        ) { uri -> writeExport(uri) }
 
-        val dao = HuiliaoDatabase.get(this).recordDao()
-        setContent {
-            val records by dao.observeAll().collectAsStateWithLifecycle(initialValue = emptyList())
-            NativeHuiliaoApp(
-                records = records,
-                onSaveRecord = { record -> lifecycleScope.launch { dao.insert(record) } },
-                onDeleteRecord = { id -> lifecycleScope.launch { dao.delete(id) } },
-                onExport = { rows, excel, month -> beginExport(rows, excel, month) },
-                onShare = { shareSavedFile() }
-            )
-        }
+        val webView = WebView(this)
+        webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.allowFileAccess = true
+        webView.settings.allowContentAccess = true
+        webView.settings.javaScriptCanOpenWindowsAutomatically = false
+        webView.isVerticalScrollBarEnabled = true
+        webView.addJavascriptInterface(ExportBridge(), "AndroidExport")
+        webView.webViewClient = WebViewClient()
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onJsAlert(view: WebView?, url: String?, message: String?, result: JsResult?): Boolean {
+                android.app.AlertDialog.Builder(this@MainActivity)
+                    .setMessage(message.orEmpty())
+                    .setPositiveButton("确定") { _, _ -> result?.confirm() }
+                    .setOnCancelListener { result?.cancel() }
+                    .show()
+                return true
+            }
 
-        // The old WebView is used only as an invisible one-time localStorage importer.
-        window.decorView.post {
-            LegacyLocalStorageMigration.run(this, dao) { recreate() }
+            override fun onJsConfirm(view: WebView?, url: String?, message: String?, result: JsResult?): Boolean {
+                android.app.AlertDialog.Builder(this@MainActivity)
+                    .setMessage(message.orEmpty())
+                    .setPositiveButton("确定") { _, _ -> result?.confirm() }
+                    .setNegativeButton("取消") { _, _ -> result?.cancel() }
+                    .setOnCancelListener { result?.cancel() }
+                    .show()
+                return true
+            }
         }
+        setContentView(webView)
+        webView.loadUrl("file:///android_asset/index.html")
     }
 
-    private fun beginExport(rows: List<List<String>>, excel: Boolean, month: String) {
-        pendingMime = if (excel) {
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        } else {
-            "text/csv"
+    private inner class ExportBridge {
+        @JavascriptInterface
+        fun saveFile(base64: String, fileName: String, mimeType: String) {
+            try {
+                val bytes = Base64.decode(base64, Base64.DEFAULT)
+                if (bytes.isEmpty()) {
+                    runOnUiThread { Toast.makeText(this@MainActivity, "导出文件为空", Toast.LENGTH_SHORT).show() }
+                    return
+                }
+                pendingBytes = bytes
+                pendingMime = if (mimeType == "text/csv") "text/csv"
+                    else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                runOnUiThread {
+                    try {
+                        if (pendingMime == "text/csv") csvLauncher.launch(fileName)
+                        else xlsxLauncher.launch(fileName)
+                    } catch (_: ActivityNotFoundException) {
+                        Toast.makeText(this@MainActivity, "无法打开系统文件保存界面", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "准备导出失败：${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
         }
-        pendingExport = if (excel) NativeXlsx.create(rows) else NativeXlsx.csv(rows)
-        val name = "回料异常统计_${month}" + if (excel) ".xlsx" else ".csv"
-        if (excel) xlsxLauncher.launch(name) else csvLauncher.launch(name)
     }
 
     private fun writeExport(uri: Uri?) {
         if (uri == null) return
         try {
             val stream = contentResolver.openOutputStream(uri) ?: error("无法打开目标文件")
-            stream.use { it.write(pendingExport ?: byteArrayOf()) }
-            savedUri = uri
-            savedMime = pendingMime
-            android.widget.Toast.makeText(this, "文件已保存", android.widget.Toast.LENGTH_LONG).show()
+            stream.use { it.write(pendingBytes) }
+            Toast.makeText(this, "文件已保存到手机", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
-            android.widget.Toast.makeText(this, "保存失败：${e.message}", android.widget.Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "保存失败：${e.message}", Toast.LENGTH_LONG).show()
         }
-    }
-
-    private fun shareSavedFile() {
-        val uri = savedUri ?: run {
-            android.widget.Toast.makeText(this, "请先导出并保存文件", android.widget.Toast.LENGTH_SHORT).show()
-            return
-        }
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = savedMime
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        startActivity(Intent.createChooser(intent, "分享导出文件"))
     }
 }
