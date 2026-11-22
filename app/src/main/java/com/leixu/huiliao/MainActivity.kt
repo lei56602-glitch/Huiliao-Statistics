@@ -83,17 +83,17 @@ class MainActivity : ComponentActivity() {
                 records = records,
                 onSaveRecord = { record -> lifecycleScope.launch { dao.insert(record) } },
                 onDeleteRecord = { id -> lifecycleScope.launch { dao.delete(id) } },
-                onExport = { rows, excel -> beginExport(rows, excel) },
+                onExport = { rows, excel, month -> beginExport(rows, excel, month) },
                 onShare = { shareSavedFile() }
             )
         }
         window.decorView.post { LegacyLocalStorageMigration.run(this, dao) { recreate() } }
     }
 
-    private fun beginExport(rows: List<List<String>>, excel: Boolean) {
+    private fun beginExport(rows: List<List<String>>, excel: Boolean, month: String) {
         pendingMime = if (excel) "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" else "text/csv"
         pendingExport = if (excel) NativeXlsx.create(rows) else NativeXlsx.csv(rows)
-        val name = "回料异常统计_${LocalDate.now()}" + if (excel) ".xlsx" else ".csv"
+        val name = "回料异常统计_${month}" + if (excel) ".xlsx" else ".csv"
         if (excel) xlsxLauncher.launch(name) else csvLauncher.launch(name)
     }
 
