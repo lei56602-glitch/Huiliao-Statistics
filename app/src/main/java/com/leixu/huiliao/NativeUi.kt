@@ -198,7 +198,7 @@ private fun DashboardPage(records: List<ProductionRecord>, lines: List<String>) 
         SectionCard("生产线看板") {
             lines.forEach { name ->
                 val rows = records.filter { it.productionLine == name }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(name, fontWeight = FontWeight.Bold); Text("${rows.size} 条 · %.2f KG".format(rows.sumOf { it.totalUnreasonable })) }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(name, fontWeight = FontWeight.Bold); Text("${rows.size} 条 · %.2f KG · A班 ${rows.count { it.team == "A班" }} · B班 ${rows.count { it.team == "B班" }}".format(rows.sumOf { it.totalUnreasonable })) }
                 HorizontalDivider()
             }
         }
