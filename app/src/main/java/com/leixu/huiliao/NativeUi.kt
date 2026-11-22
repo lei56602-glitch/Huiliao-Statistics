@@ -295,7 +295,7 @@ internal fun abnormalStats(records: List<ProductionRecord>): List<Pair<String, D
         val items = parseSubItems(r.abnormalSubItems)
         if (items.isNotEmpty() && r.totalUnreasonable > 0) {
             val each = r.totalUnreasonable / items.size
-            items.forEach { raw -> val name = raw.substringAfter("-", raw); map[name] = (map[name] ?: 0.0) + each }
+            items.forEach { raw -> val name = raw.substringBefore("-"); map[name] = (map[name] ?: 0.0) + each }
         }
     }
     return map.toList().sortedByDescending { it.second }
