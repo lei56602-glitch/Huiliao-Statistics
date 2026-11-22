@@ -10,6 +10,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import java.time.Instant
+import java.time.ZoneOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +55,8 @@ internal fun NativeHuiliaoApp(
     var types by remember { mutableStateOf(loadTypes(prefs)) }
     var page by remember { mutableIntStateOf(0) }
     var month by remember { mutableStateOf(LocalDate.now().toString().take(7)) }
+    var showMonthPicker by remember { mutableStateOf(false) }
+    val monthPickerState = rememberDatePickerState(initialSelectedDateMillis = runCatching { LocalDate.parse(month + "-01").toEpochDay() * 86_400_000L }.getOrNull())
     var query by remember { mutableStateOf("") }
     var manageTeam by remember { mutableStateOf("A班") }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -70,7 +74,7 @@ internal fun NativeHuiliaoApp(
                         Spacer(Modifier.width(8.dp))
                         Text("统计月份", style = MaterialTheme.typography.labelLarge)
                         Spacer(Modifier.width(12.dp))
-                        OutlinedTextField(month, { if (it.matches(Regex("\\d{0,4}(-\\d{0,2})?"))) month = it }, modifier = Modifier.weight(1f), singleLine = true, placeholder = { Text("YYYY-MM") })
+                        OutlinedTextField(month, {}, modifier = Modifier.weight(1f), readOnly = true, singleLine = true, trailingIcon = { IconButton(onClick = { showMonthPicker = true }) { Icon(Icons.Default.CalendarMonth, "选择月份") } })
                     }
                 }
             },
@@ -98,6 +102,18 @@ internal fun NativeHuiliaoApp(
                         { category, item -> types = types.toMutableMap().also { it[category] = (it[category] ?: emptyList()) - item }; persistTypes(types, prefs) })
                 }
             }
+        }
+        if (showMonthPicker) {
+            DatePickerDialog(
+                onDismissRequest = { showMonthPicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        monthPickerState.selectedDateMillis?.let { millis -> month = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toString().take(7) }
+                        showMonthPicker = false
+                    }) { Text("确定") }
+                },
+                dismissButton = { TextButton(onClick = { showMonthPicker = false }) { Text("取消") } }
+            ) { DatePicker(state = monthPickerState, showModeToggle = false) }
         }
         if (showAddDialog) AlertDialog(
             onDismissRequest = { showAddDialog = false },
