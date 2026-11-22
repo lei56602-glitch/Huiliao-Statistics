@@ -153,8 +153,8 @@ private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: Lis
         SectionCard("回收料异常记录") {
             OutlinedTextField(date, {}, enabled = false, label = { Text("日期") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
             ChoiceField("生产线", line, listOf("") + lines) { line = it }
-            ChoiceField("班组", team, listOf("A班", "B班")) { team = it; person = (if (it == "A班") personsA else personsB).firstOrNull().orEmpty() }
-            ChoiceField("人员", person, people) { person = it }
+            ChoiceField("班组", team, listOf("", "A班", "B班")) { team = it; person = "" }
+            if (team.isBlank()) OutlinedTextField("先选班组", {}, enabled = false, label = { Text("人员") }, modifier = Modifier.fillMaxWidth()) else ChoiceField("人员", person, listOf("") + people) { person = it }
             OutlinedTextField(model, { model = it }, label = { Text("产品型号") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(weight, { weight = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("数量 (KG)") }, modifier = Modifier.fillMaxWidth())
         }
