@@ -20,10 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal object LegacyLocalStorageMigration {
     fun run(activity: Activity, dao: RecordDao, onFinished: () -> Unit) {
         val prefs = activity.getSharedPreferences("native_config", 0)
-        if (prefs.getBoolean("legacy_migration_done", false)) {
-            onFinished()
-            return
-        }
+        if (prefs.getBoolean("legacy_migration_done", false)) return
         val root = activity.findViewById<ViewGroup>(android.R.id.content)
         val webView = WebView(activity)
         webView.settings.javaScriptEnabled = true
