@@ -34,6 +34,9 @@ interface RecordDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(record: ProductionRecord)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(records: List<ProductionRecord>)
+
     @Query("DELETE FROM production_records WHERE id = :id")
     suspend fun delete(id: String)
 
