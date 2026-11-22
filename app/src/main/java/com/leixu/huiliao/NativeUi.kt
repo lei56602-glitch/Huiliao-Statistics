@@ -1,5 +1,6 @@
 package com.leixu.huiliao
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,11 +14,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
+import java.time.YearMonth
 
 internal val AppBlue = Color(0xFF315FCE)
 internal val TeamOrange = Color(0xFFC26A32)
@@ -80,7 +86,7 @@ internal fun NativeHuiliaoApp(
                     0 -> EntryPage(lines, personsA, personsB, types, onSaveRecord)
                     1 -> DashboardPage(records.filter { it.date.startsWith(month) }, lines)
                     2 -> RankPage(records.filter { it.date.startsWith(month) })
-                    3 -> WeeklyPage(records.filter { it.date.startsWith(month) })
+                    3 -> WeeklyPage(records.filter { it.date.startsWith(month) }, month)
                     4 -> RecordPage(records.filter { it.date.startsWith(month) }, query, { query = it }, onDeleteRecord, onExport, onShare)
                     else -> ManagePage(lines, personsA, personsB, types, manageTeam, { manageTeam = it },
                         { addTarget = it; addValue = ""; showAddDialog = true },
@@ -196,15 +202,26 @@ private fun RankPage(records: List<ProductionRecord>) {
 }
 
 @Composable
-private fun WeeklyPage(records: List<ProductionRecord>) {
-    val weeks = records.groupBy { r -> LocalDate.parse(r.date).let { it.minusDays((it.dayOfWeek.value - 1).toLong()).toString() } }.toSortedMap()
+private fun WeeklyPage(records: List<ProductionRecord>, month: String) {
+    val ym = runCatching { YearMonth.parse(month) }.getOrElse { YearMonth.now() }
+    val first = ym.atDay(1)
+    val last = ym.atEndOfMonth()
+    var monday = first.minusDays((first.dayOfWeek.value - 1).toLong())
+    val weeks = mutableListOf<Triple<String, Double, Double>>()
+    while (!monday.isAfter(last)) {
+        val sunday = monday.plusDays(6)
+        val rows = records.filter { r -> runCatching { LocalDate.parse(r.date) }.getOrNull()?.let { !it.isBefore(monday) && !it.isAfter(sunday) } == true }
+        val a = rows.filter { it.team == "A班" }.sumOf { it.totalUnreasonable }
+        val b = rows.filter { it.team == "B班" }.sumOf { it.totalUnreasonable }
+        weeks.add(Triple("${monday.monthValue}/${monday.dayOfMonth}~${sunday.monthValue}/${sunday.dayOfMonth}", a, b))
+        monday = monday.plusWeeks(1)
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("每周数据统计对比", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text("自然周（周一至周日）聚合", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        weeks.forEach { (start, rows) ->
-            val a = rows.filter { it.team == "A班" }.sumOf { it.totalUnreasonable }
-            val b = rows.filter { it.team == "B班" }.sumOf { it.totalUnreasonable }
-            SectionCard("$start 起") { Text("A班：%.2f KG".format(a), color = AppBlue); Text("B班：%.2f KG".format(b), color = TeamOrange); Text("合计：%.2f KG · %d 条".format(a + b, rows.size), fontWeight = FontWeight.Bold) }
+        WeeklyBarChart(weeks)
+        weeks.forEach { (label, a, b) ->
+            SectionCard(label) { Text("A班：%.2f KG".format(a), color = AppBlue); Text("B班：%.2f KG".format(b), color = TeamOrange); Text("合计：%.2f KG".format(a + b), fontWeight = FontWeight.Bold) }
         }
         Text("本月总计：%.2f KG".format(records.sumOf { it.totalUnreasonable }), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     }
@@ -288,4 +305,43 @@ private fun persistTypes(types: Map<String, List<String>>, prefs: android.conten
         array.put(obj)
     }
     prefs.edit().putString("types", array.toString()).apply()
+}
+
+@Composable
+private fun DonutChart(values: List<Pair<String, Double>>) {
+    val palette = listOf(AppBlue, TeamOrange, Color(0xFF0FC6C2), Color(0xFFF59E0B), Color(0xFFEF4444), Color(0xFF10B981))
+    Canvas(Modifier.fillMaxWidth().height(190.dp)) {
+        val total = values.sumOf { it.second }.coerceAtLeast(0.0001)
+        val stroke = size.minDimension * 0.19f
+        val diameter = size.minDimension * 0.78f
+        val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+        var start = -90f
+        values.forEachIndexed { index, item ->
+            val sweep = (item.second / total * 360.0).toFloat()
+            drawArc(palette[index % palette.size], start, sweep, false, topLeft, Size(diameter, diameter), style = Stroke(width = stroke))
+            start += sweep
+        }
+    }
+}
+
+@Composable
+private fun WeeklyBarChart(weeks: List<Triple<String, Double, Double>>) {
+    val maxValue = weeks.maxOfOrNull { maxOf(it.second, it.third) }?.coerceAtLeast(1.0) ?: 1.0
+    Canvas(Modifier.fillMaxWidth().height(170.dp)) {
+        if (weeks.isEmpty()) return@Canvas
+        val base = size.height - 8.dp.toPx()
+        val group = size.width / weeks.size
+        val barWidth = (group * 0.22f).coerceAtLeast(4.dp.toPx())
+        weeks.forEachIndexed { index, item ->
+            val center = group * (index + 0.5f)
+            val aHeight = ((item.second / maxValue) * (base - 8.dp.toPx())).toFloat()
+            val bHeight = ((item.third / maxValue) * (base - 8.dp.toPx())).toFloat()
+            drawRect(AppBlue, Offset(center - barWidth - 2.dp.toPx(), base - aHeight), Size(barWidth, aHeight))
+            drawRect(TeamOrange, Offset(center + 2.dp.toPx(), base - bHeight), Size(barWidth, bHeight))
+        }
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+        Text("A班", color = AppBlue, style = MaterialTheme.typography.labelSmall)
+        Text("B班", color = TeamOrange, style = MaterialTheme.typography.labelSmall)
+    }
 }
