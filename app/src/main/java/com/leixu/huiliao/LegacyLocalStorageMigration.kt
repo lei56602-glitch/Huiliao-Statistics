@@ -1,6 +1,6 @@
 package com.leixu.huiliao
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * The new application UI remains fully native; this WebView is never displayed.
  */
 internal object LegacyLocalStorageMigration {
-    fun run(activity: Activity, dao: RecordDao, onFinished: () -> Unit) {
+    fun run(activity: ComponentActivity, dao: RecordDao, onFinished: () -> Unit) {
         val prefs = activity.getSharedPreferences("native_config", 0)
         if (prefs.getBoolean("legacy_migration_done", false)) return
         val root = activity.findViewById<ViewGroup>(android.R.id.content)
