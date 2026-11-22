@@ -13,6 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 internal fun RecordPage(
@@ -20,8 +23,9 @@ internal fun RecordPage(
     query: String,
     onQuery: (String) -> Unit,
     onDelete: (String) -> Unit,
-    onExport: (List<List<String>>, Boolean) -> Unit,
-    onShare: () -> Unit
+    onExport: (List<List<String>>, Boolean, String) -> Unit,
+    onShare: () -> Unit,
+    month: String
 ) {
     var deleteTarget by remember { mutableStateOf<ProductionRecord?>(null) }
     val filtered = records.filter { r ->
@@ -30,8 +34,8 @@ internal fun RecordPage(
     Column(Modifier.fillMaxSize().padding(vertical = 10.dp)) {
         OutlinedTextField(query, onQuery, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("搜索记录") }, leadingIcon = { Icon(Icons.Default.Search, null) })
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {
-            Button(onClick = { onExport(exportRows(filtered), true) }, modifier = Modifier.weight(1f)) { Text("导出 Excel") }
-            OutlinedButton(onClick = { onExport(exportRows(filtered), false) }, modifier = Modifier.weight(1f)) { Text("导出 CSV") }
+            Button(enabled = filtered.isNotEmpty(), onClick = { onExport(exportRows(filtered), true, month) }, modifier = Modifier.weight(1f)) { Text("导出 Excel") }
+            OutlinedButton(enabled = filtered.isNotEmpty(), onClick = { onExport(exportRows(filtered), false, month) }, modifier = Modifier.weight(1f)) { Text("导出 CSV") }
         }
         OutlinedButton(onClick = onShare, modifier = Modifier.fillMaxWidth()) { Text("分享最近导出的文件") }
         if (filtered.isEmpty()) {
@@ -130,7 +134,7 @@ internal fun exportRows(records: List<ProductionRecord>): List<List<String>> {
             "%.2f".format(r.productWeight),
             "%.2f".format(r.totalUnreasonable),
             parseSubItems(r.abnormalSubItems).joinToString("、") { it.substringAfter("-", it) },
-            r.createTime
+            runCatching { Instant.parse(r.createTime).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) }.getOrDefault(r.createTime)
         ))
     }
     return rows
