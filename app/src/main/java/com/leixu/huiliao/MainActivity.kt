@@ -64,6 +64,7 @@ class MainActivity : ComponentActivity() {
     private var pendingExport: ByteArray? = null
     private var pendingMime: String = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     private var savedUri: Uri? = null
+    private var savedMime: String = "application/octet-stream"
     private lateinit var xlsxLauncher: ActivityResultLauncher<String>
     private lateinit var csvLauncher: ActivityResultLauncher<String>
 
@@ -103,6 +104,7 @@ class MainActivity : ComponentActivity() {
             val stream = contentResolver.openOutputStream(uri) ?: error("无法打开目标文件")
             stream.use { it.write(pendingExport ?: byteArrayOf()) }
             savedUri = uri
+            savedMime = pendingMime
             android.widget.Toast.makeText(this, "文件已保存", android.widget.Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             android.widget.Toast.makeText(this, "保存失败：${e.message}", android.widget.Toast.LENGTH_LONG).show()
