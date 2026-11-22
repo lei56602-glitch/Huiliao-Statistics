@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>回料异常统计 - 月度周对比完整版</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <style>
+    body { font-size: 15px; padding-bottom: 70px; }
+    .glass { background: rgba(255,255,255,0.75); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); }
+    .glass-dark { background: rgba(22,93,255,0.06); backdrop-filter: blur(8px); }
+    .input-liquid { border: 1px solid rgba(22,93,255,0.2); transition: all 0.2s; }
+    .input-liquid:focus { outline: none; border-color: #165DFF; box-shadow: 0 0 0 2px rgba(22,93,255,0.1); }
+    .tab-active { color: #165DFF; border-bottom: 2px solid #165DFF; font-weight: 600; }
+    .team-A { color: #165DFF; background-color: rgba(22, 93, 255, 0.1); }
+    .team-B { color: #C2410C; background-color: rgba(194, 65, 12, 0.1); }
+    .highlight-input { background-color: #FFFBEB !important; border-left: 4px solid #F59E0B !important; }
+    .float-submit-btn {
+      position: fixed; bottom: 24px; right: 20px; z-index: 1000;
+      background: linear-gradient(135deg, #165DFF, #C2410C);
+      color: white; border: none; border-radius: 48px;
+      padding: 12px 24px; font-weight: bold;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2); cursor: pointer;
+      transition: 0.2s;
+    }
+    .float-submit-btn:active { transform: scale(0.96); }
+    @media (max-width: 640px) { .float-submit-btn { padding: 10px 18px; font-size: 14px; } }
+  
+  /* Android 17 / Material 3 风格层：仅覆盖视觉，不改业务结构 */
+  :root {
+    color-scheme: light;
+    --md-primary: #315fce;
+    --md-on-primary: #ffffff;
+    --md-primary-container: #dce2ff;
+    --md-surface: #f7f7fb;
+    --md-surface-container: #eeeff5;
+    --md-outline: #c5c6d0;
+    --md-on-surface: #191b22;
+    --md-radius: 24px;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--md-surface) !important;
+    color: var(--md-on-surface);
+    font-family: Roboto, "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 15px;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+  header.glass {
+    background: rgba(247,247,251,.92);
+    border: 0;
+    border-bottom: 1px solid rgba(80,82,94,.14);
+    box-shadow: 0 2px 14px rgba(25,27,34,.06);
+    backdrop-filter: blur(22px);
+    padding-top: env(safe-area-inset-top);
+  }
+  header h1 { color: var(--md-primary) !important; background: none !important; -webkit-text-fill-color: var(--md-primary); letter-spacing: -.3px; }
+  header .border-t { border-color: rgba(80,82,94,.14); }
+  main { max-width: 1180px; margin: 0 auto; padding: 18px 14px 30px !important; }
+  .glass, .glass-dark {
+    background: #fff;
+    border: 1px solid rgba(80,82,94,.12);
+    border-radius: var(--md-radius);
+    box-shadow: 0 2px 8px rgba(25,27,34,.045);
+    backdrop-filter: none;
+  }
+  .glass-dark { background: var(--md-primary-container); }
+  .tab-btn {
+    border: 0 !important; border-radius: 999px; padding: 9px 15px !important;
+    color: #454750; font-weight: 600; white-space: nowrap;
+  }
+  .tab-btn.tab-active {
+    background: var(--md-primary-container); color: #173d91;
+    border: 0 !important;
+  }
+  header .flex.gap-1.overflow-x-auto { scrollbar-width: none; padding: 3px 0; }
+  header .flex.gap-1.overflow-x-auto::-webkit-scrollbar { display: none; }
+  button {
+    border-radius: 999px;
+    min-height: 40px;
+    font-weight: 600;
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  button:active { transform: scale(.97); }
+  button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid rgba(49,95,206,.25); outline-offset: 2px;
+  }
+  input, select, textarea {
+    min-height: 44px; border-radius: 13px !important;
+    background-color: #f1f1f7;
+    border: 1px solid transparent !important;
+    color: var(--md-on-surface);
+    padding-left: 12px; padding-right: 12px;
+  }
+  input:focus, select:focus, textarea:focus {
+    background: #fff; border-color: var(--md-primary) !important;
+    box-shadow: 0 0 0 2px rgba(49,95,206,.12) !important; outline: 0;
+  }
+  input[type="checkbox"] { accent-color: var(--md-primary); min-height: auto; }
+  label { font-weight: 600; color: #444650; }
+  .highlight-input { background: #fff8e1 !important; border-left: 3px solid #d49a16 !important; }
+  .team-A { color: #244eac; background: #e5eaff; }
+  .team-B { color: #8b3d19; background: #ffeadf; }
+  .float-submit-btn {
+    right: 18px; bottom: calc(18px + env(safe-area-inset-bottom));
+    border-radius: 18px; padding: 15px 22px; min-height: 54px;
+    background: var(--md-primary); color: var(--md-on-primary);
+    box-shadow: 0 5px 16px rgba(49,95,206,.28);
+  }
+  table { border-collapse: separate; border-spacing: 0; }
+  th { color: #555762; font-weight: 700; background: #f1f1f7; padding: 11px 8px; }
+  td { padding-top: 10px; padding-bottom: 10px; border-bottom: 1px solid #e7e7ee; }
+  #exportModal { background: rgba(18,20,27,.48); }
+  #exportModal > div {
+    border-radius: 28px; padding: 24px; background: #fff;
+    box-shadow: 0 16px 48px rgba(0,0,0,.2);
+  }
+  #exportModal h3 { font-size: 21px; color: var(--md-on-surface); }
+  #exportStatus { color: #5d5f69; line-height: 1.6; }
+  @media (min-width: 700px) {
+    header > div { max-width: 1180px; margin: 0 auto; padding: 14px 20px !important; }
+    main { padding-left: 22px !important; padding-right: 22px !important; }
+    .float-submit-btn { right: max(28px, calc((100vw - 1180px)/2)); }
+  }
+  @media (max-width: 520px) {
+    header h1 { font-size: 19px; }
+    header > div > div:first-child { align-items: flex-start; flex-direction: column; }
+    header > div > div:nth-child(2) { flex-wrap: wrap; gap: 8px; }
+    header > div > div:nth-child(2) > div:last-child { width: 100%; }
+    #exportModal > div { padding: 20px; }
+    .float-submit-btn { right: 14px; }
+  }
+
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { primary: '#165DFF', secondary: '#C2410C', success: '#10B981' } } } }
+  </script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-amber-50">
+
+<!-- 悬浮提交按钮 -->
+<button id="floatSubmitBtn" class="float-submit-btn"><i class="fa fa-check-circle"></i> 提交记录</button>
+
+<!-- 导出模态框 -->
+<div id="exportModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md p-5">
+    <h3 class="text-xl font-bold mb-3">导出文件</h3>
+    <div class="flex gap-2 mb-3">
+      <button id="switchExcelBtn" class="px-4 py-2 rounded-full bg-primary text-white">Excel (.xlsx)</button>
+      <button id="switchCsvBtn" class="px-4 py-2 rounded-full bg-gray-200">CSV (.csv)</button>
+    </div>
+    <p id="exportStatus" class="text-sm py-3">文件已准备好。</p>
+    <div class="grid grid-cols-2 gap-2 mt-3">
+      <button id="downloadExportBtn" class="bg-primary text-white py-3">下载文件</button>
+      <button id="shareExportBtn" class="bg-gray-100 text-gray-800 py-3">分享 / 保存</button>
+      <button id="closeExportBtn" class="col-span-2 bg-gray-100 text-gray-700 py-2">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 头部 -->
+<header class="sticky top-0 z-50 glass shadow-sm">
+  <div class="px-3 py-2">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"><i class="fa fa-bar-chart"></i> 回料异常统计</h1>
+      <div class="flex gap-1 overflow-x-auto">
+        <button class="tab-btn tab-active px-3 py-1" data-tab="form">录入</button>
+        <button class="tab-btn px-3 py-1" data-tab="dashboard">看板</button>
+        <button class="tab-btn px-3 py-1" data-tab="rank">排行</button>
+        <button class="tab-btn px-3 py-1" data-tab="weekly">周对比</button>
+        <button class="tab-btn px-3 py-1" data-tab="record">记录</button>
+        <button class="tab-btn px-3 py-1" data-tab="manage">管理</button>
+      </div>
+    </div>
+    <div class="flex items-center justify-between mt-2 pt-1 border-t">
+      <div class="flex items-center gap-2 text-sm"><i class="fa fa-calendar text-primary"></i> 统计月份：</div>
+      <input type="month" id="monthPicker" class="border rounded-lg px-3 py-1 text-sm">
+      <button id="refreshMonthBtn" class="bg-primary/10 text-primary px-3 py-1 rounded-lg text-sm"><i class="fa fa-refresh"></i> 切换</button>
+      <div class="text-xs text-gray-500">数据按所选月份隔离</div>
+    </div>
+  </div>
+</header>
+
+<main class="px-2 py-3">
+  <!-- 录入表单 (无内置提交按钮) -->
+  <section id="form" class="tab-content block">
+    <div class="glass rounded-xl p-3">
+      <h2 class="text-lg font-bold mb-2">回收料异常记录</h2>
+      <form id="abnormalForm" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div><label>日期</label><input type="date" id="recordDate" class="input-liquid w-full rounded px-3 py-2" disabled></div>
+            <div><label>生产线</label><div class="flex gap-1"><select id="productionLine" class="input-liquid flex-1 rounded px-3 py-2"></select><button type="button" id="addLineBtn" class="px-3 bg-primary/10 rounded"><i class="fa fa-plus"></i></button></div></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label>班组</label><select id="team" class="input-liquid w-full rounded px-3 py-2"><option value="">选择</option><option value="A班">A班</option><option value="B班">B班</option></select></div>
+            <div><label>人员</label><div class="flex gap-1"><select id="personnel" class="input-liquid flex-1 rounded px-3 py-2" disabled></select><button type="button" id="addPersonBtn" class="px-3 bg-gray-200 rounded" disabled><i class="fa fa-plus"></i></button></div></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label>产品型号</label><input type="text" id="productModel" placeholder="型号" class="highlight-input input-liquid w-full rounded px-3 py-2"></div>
+            <div><label>数量(KG)</label><input type="number" id="productWeight" placeholder="0" min="0" step="0.01" class="highlight-input input-liquid w-full rounded px-3 py-2"></div>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <h3 class="font-semibold">合理扣减 (KG)</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label>调机扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" value="0"></div>
+            <div><label>洗机扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" value="0"></div>
+            <div><label>百丝边料扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" value="0"></div>
+            <div><label>自割料扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" value="0"></div>
+          </div>
+          <div class="glass-dark p-3 rounded"><div class="flex justify-between"><span class="font-semibold">最终不合理数量 (KG)</span><span id="totalUnreasonable" class="text-2xl font-bold text-danger">0.00</span></div><input type="hidden" id="totalUnreasonableInput" value="0"></div>
+        </div>
+        <div class="md:col-span-2"><h3 class="font-semibold mb-1">异常类型 (多选)</h3><div id="abnormalTypeContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- 看板 -->
+  <section id="dashboard" class="tab-content hidden"><div class="glass rounded-xl p-3"><h2 class="text-lg font-bold">月度数据总览 <span id="dashboardMonth" class="text-sm bg-gray-200 px-2 rounded-full"></span></h2><div class="grid grid-cols-2 gap-3 my-3"><div class="glass p-3"><div class="text-gray-500">总记录</div><div id="totalRecordCount" class="text-2xl font-bold text-primary">0</div></div><div class="glass p-3"><div class="text-gray-500">总不合理(KG)</div><div id="totalUnreasonableWeight" class="text-2xl font-bold text-danger">0.00</div></div><div class="glass p-3 team-A"><div class="text-sm">A班记录</div><div id="teamATotal" class="text-2xl font-bold">0</div></div><div class="glass p-3 team-B"><div class="text-sm">B班记录</div><div id="teamBTotal" class="text-2xl font-bold">0</div></div></div><h2 class="font-bold">生产线看板</h2><div id="lineDashboardContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2"></div></div></section>
+
+  <!-- 排行 -->
+  <section id="rank" class="tab-content hidden"><div class="glass rounded-xl p-3"><div class="grid lg:grid-cols-3 gap-3"><div class="glass p-3"><h3 class="font-bold"><i class="fa fa-users"></i> 班组排行</h3><div id="teamRankContainer" class="space-y-2 mt-2"></div></div><div class="glass p-3"><h3 class="font-bold"><i class="fa fa-industry"></i> 线别排行</h3><div id="lineRankContainer" class="space-y-2 mt-2"></div></div><div class="glass p-3"><h3 class="font-bold"><i class="fa fa-user"></i> 人员排行</h3><div id="personRankContainer" class="space-y-2 mt-2"></div></div></div><div class="mt-3 glass p-3"><h3 class="font-bold">总异常类型分布图 (KG)</h3><div class="h-52"><canvas id="abnormalTypeChart"></canvas></div><div id="totalChartLegend" class="grid grid-cols-2 gap-1 text-sm mt-2"></div></div><div class="mt-3 grid lg:grid-cols-2 gap-3"><div class="glass p-3"><h3 class="font-bold text-teamA">A班异常分布</h3><div class="h-44"><canvas id="teamAChart"></canvas></div><div id="teamAChartLegend" class="text-sm mt-1"></div></div><div class="glass p-3"><h3 class="font-bold text-teamB">B班异常分布</h3><div class="h-44"><canvas id="teamBChart"></canvas></div><div id="teamBChartLegend" class="text-sm mt-1"></div></div></div></div></section>
+
+  <!-- 周对比（新增） -->
+  <section id="weekly" class="tab-content hidden"><div class="glass rounded-xl p-3 space-y-3"><div class="flex justify-between items-center"><h2 class="text-xl font-bold"><i class="fa fa-calendar-week text-primary"></i> 每周数据统计对比</h2><span id="weeklyMonthBadge" class="bg-gray-200 px-3 py-1 rounded-full text-sm font-mono"></span></div><div class="bg-amber-50 p-2 rounded text-sm">📌 自然周（周一~周日）聚合，展示A班/B班合计重量，底部汇总当月总计。</div><div class="h-72"><canvas id="weeklyChart"></canvas></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-100"><tr><th class="p-2 text-left">周区间</th><th class="p-2 text-right">A班(KG)</th><th class="p-2 text-right">B班(KG)</th><th class="p-2 text-right">合计(KG)</th><th class="p-2 text-right">条数</th></tr></thead><tbody id="weeklyTableBody"></tbody><tfoot class="bg-green-100 font-bold"><tr><td class="p-2 text-right">本月总计</td><td id="monthTotalA" class="p-2 text-right text-teamA">0.00</td><td id="monthTotalB" class="p-2 text-right text-teamB">0.00</td><td id="monthTotalSum" class="p-2 text-right text-danger">0.00</td><td id="monthTotalCount" class="p-2 text-right">0</td></tr></tfoot></table></div></div></section>
+
+  <!-- 记录 -->
+  <section id="record" class="tab-content hidden"><div class="glass rounded-xl p-3"><div class="flex justify-between items-center flex-wrap gap-2 mb-3"><h2 class="text-lg font-bold">详细记录 <span id="recordMonthHint" class="text-sm font-normal"></span></h2><div class="flex gap-1"><input type="text" id="searchRecord" placeholder="搜索" class="input-liquid w-32 rounded px-3 py-1"><button id="refreshRecordBtn" class="px-3 py-1 bg-primary/10 rounded"><i class="fa fa-refresh"></i></button><button id="exportBtn" class="px-3 py-1 bg-success/10 text-success rounded"><i class="fa fa-download"></i> 导出文件</button></div></div><div class="overflow-x-auto"><table class="w-full text-sm min-w-[800px]"><thead><tr><th>日期</th><th>线</th><th>班</th><th>人</th><th>型号</th><th>不合理(KG)</th><th>类型</th><th></th></tr></thead><tbody id="recordTableBody"></tbody></table></div><div id="emptyRecordTip" class="py-8 text-center text-gray-400 hidden"><i class="fa fa-inbox"></i> 暂无记录</div></div></section>
+
+  <!-- 管理 -->
+  <section id="manage" class="tab-content hidden"><div class="grid lg:grid-cols-3 gap-3"><div class="glass rounded-xl p-3 lg:col-span-2"><div class="flex justify-between"><h2 class="font-bold">异常类型</h2><button id="addTypeBtn" class="bg-primary text-white px-3 py-1 rounded">+ 大类</button></div><div id="typeManageContainer" class="space-y-3 mt-2"></div></div><div class="space-y-3"><div class="glass p-3"><h2 class="font-bold">生产线</h2><div id="lineManageContainer" class="space-y-2 my-2"></div><div class="flex gap-1"><input id="newLineInput" placeholder="名称" class="input-liquid flex-1 rounded px-3 py-1"><button id="confirmAddLineBtn" class="bg-primary text-white px-3 py-1 rounded">+</button></div></div><div class="glass p-3"><h2 class="font-bold">人员</h2><div class="flex border rounded overflow-hidden mb-2"><button id="manageTeamATab" class="flex-1 py-1 bg-teamA/10 text-teamA">A班</button><button id="manageTeamBTab" class="flex-1 py-1 text-gray-500">B班</button></div><div id="personManageContainer" class="space-y-2"></div><div class="flex gap-1 mt-2"><input id="newPersonInput" placeholder="姓名" class="input-liquid flex-1 rounded px-3 py-1"><button id="confirmAddPersonBtn" class="bg-teamA text-white px-3 py-1 rounded">+</button></div></div></div></div></section>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  // 默认数据
+  const defaultTypes = [
+    { id: 'type1', name: '设备清洗', subItems: ['停机洗机','开机洗机','洗机','换单洗机','冲螺杆'] },
+    { id: 'type2', name: '换规格/调机', subItems: ['换单调机','开机调机','波动调机','刮模具','换网片','擦辊','卷辊'] },
+    { id: 'type3', name: '收卷/切边', subItems: ['收卷废料','收卷异常','百丝切边','压边异常'] },
+    { id: 'type4', name: '物料/配方', subItems: ['晶点','积料','黑点','配方异常','堵网','粘性大','胶料','拱胶','不下料','混料'] },
+    { id: 'type5', name: '设备异常', subItems: ['主机调试','冷水机','除湿机','温度异常','模具温度'] }
+  ];
+  const defaultLines = ['1号线','2号线','3号线','4号线','5号线'];
+  const STORAGE = { TYPES:'ab_types', LINES:'lines', PERSONS:'persons', RECORDS:'records' };
+  let currentManageTeam = 'A班';
+  let chartTotal, chartA, chartB, weeklyChart = null;
+  let currentFormat = 'excel';
+  let currentExportBlob = null;
+  let currentExportName = '';
+  let currentExportSheet = null;
+  let currentViewMonth = ''; // YYYY-MM
+  const storage = { get: (k) => JSON.parse(localStorage.getItem(k) || 'null'), set: (k,v) => localStorage.setItem(k, JSON.stringify(v)) };
+  const getToday = () => new Date().toISOString().slice(0,10);
+  const getCurrentMonth = () => new Date().toISOString().slice(0,7);
+  const genId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const getRecordsByMonth = (month) => (storage.get(STORAGE.RECORDS) || []).filter(r => r.date && r.date.startsWith(month));
+
+  // 周工具
+  function getWeekRange(dateStr) {
+    const d = new Date(dateStr);
+    const day = d.getDay(); // 0周日
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(d); mon.setDate(d.getDate() + diff);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    const fmt = dt => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+    return { start: fmt(mon), end: fmt(sun), label: `${String(mon.getMonth()+1)}/${String(mon.getDate())}~${String(sun.getMonth()+1)}/${String(sun.getDate())}` };
+  }
+
+  // 周对比渲染
+  function renderWeekly() {
+    if (!currentViewMonth) return;
+    document.getElementById('weeklyMonthBadge').innerText = currentViewMonth;
+    const records = getRecordsByMonth(currentViewMonth);
+    const startDate = currentViewMonth + '-01';
+    const endDateObj = new Date(new Date(currentViewMonth + '-01').getFullYear(), new Date(currentViewMonth + '-01').getMonth()+1, 0);
+    const endDate = endDateObj.toISOString().slice(0,10);
+    const monthRecords = records.filter(r => r.date >= startDate && r.date <= endDate);
+    const weekMap = new Map();
+    for (const rec of monthRecords) {
+      const w = parseFloat(rec.totalUnreasonable) || 0;
+      if (w <= 0) continue;
+      const range = getWeekRange(rec.date);
+      const key = range.start;
+      if (!weekMap.has(key)) weekMap.set(key, { label: range.label, start: key, a:0, b:0, count:0 });
+      const entry = weekMap.get(key);
+      if (rec.team === 'A班') entry.a += w; else entry.b += w;
+      entry.count++;
+    }
+    // 补齐该月所有自然周（显示空周）
+    let firstDay = new Date(startDate);
+    let lastDay = new Date(endDate);
+    let cur = new Date(firstDay);
+    cur.setDate(firstDay.getDate() - (firstDay.getDay()===0 ? 6 : firstDay.getDay()-1));
+    const weeks = [];
+    while (cur <= lastDay) {
+      const monStr = cur.toISOString().slice(0,10);
+      const sun = new Date(cur); sun.setDate(cur.getDate()+6);
+      if (sun >= firstDay && monStr <= endDate) {
+        const exist = weekMap.get(monStr);
+        weeks.push(exist || { label: `${cur.getMonth()+1}/${cur.getDate()}~${sun.getMonth()+1}/${sun.getDate()}`, a:0, b:0, count:0, start: monStr });
+      }
+      cur.setDate(cur.getDate()+7);
+    }
+    weeks.sort((a,b)=>a.start.localeCompare(b.start));
+    const labels = weeks.map(w=>w.label);
+    const aData = weeks.map(w=>w.a);
+    const bData = weeks.map(w=>w.b);
+    const monthATotal = weeks.reduce((s,w)=>s+w.a,0);
+    const monthBTotal = weeks.reduce((s,w)=>s+w.b,0);
+    document.getElementById('monthTotalA').innerText = monthATotal.toFixed(2);
+    document.getElementById('monthTotalB').innerText = monthBTotal.toFixed(2);
+    document.getElementById('monthTotalSum').innerText = (monthATotal+monthBTotal).toFixed(2);
+    document.getElementById('monthTotalCount').innerText = weeks.reduce((s,w)=>s+w.count,0);
+    document.getElementById('weeklyTableBody').innerHTML = weeks.map(w => `<tr><td class="p-2">${w.label}</td><td class="p-2 text-right text-teamA">${w.a.toFixed(2)}</td><td class="p-2 text-right text-teamB">${w.b.toFixed(2)}</td><td class="p-2 text-right font-bold">${(w.a+w.b).toFixed(2)}</td><td class="p-2 text-right">${w.count}</td></tr>`).join('');
+    if (weeklyChart) weeklyChart.destroy();
+    const ctx = document.getElementById('weeklyChart').getContext('2d');
+    weeklyChart = new Chart(ctx, { type:'bar', data: { labels, datasets: [{ label:'A班 (KG)', data:aData, backgroundColor:'#165DFF' },{ label:'B班 (KG)', data:bData, backgroundColor:'#C2410C' }] }, options: { responsive:true, maintainAspectRatio:true, scales: { y: { beginAtZero: true, title: { display: true, text: '重量 (KG)' } } } } });
+  }
+
+  // 看板、排行、图表（基于月份）
+  function renderDashboard() {
+    const records = getRecordsByMonth(currentViewMonth);
+    const lines = storage.get(STORAGE.LINES) || [];
+    document.getElementById('totalRecordCount').innerText = records.length;
+    const totalW = records.reduce((s,r)=>s+(+r.totalUnreasonable||0),0).toFixed(2);
+    document.getElementById('totalUnreasonableWeight').innerText = totalW + ' KG';
+    document.getElementById('teamATotal').innerText = records.filter(r=>r.team==='A班').length;
+    document.getElementById('teamBTotal').innerText = records.filter(r=>r.team==='B班').length;
+    document.getElementById('dashboardMonth').innerText = currentViewMonth;
+    const cont = document.getElementById('lineDashboardContainer');
+    cont.innerHTML = lines.map(line => {
+      const lineRecs = records.filter(r=>r.productionLine===line);
+      const w = lineRecs.reduce((s,r)=>s+(+r.totalUnreasonable||0),0).toFixed(2);
+      return `<div class="glass p-3"><div class="font-bold">${line}</div><div class="text-sm mt-1"><div class="flex justify-between"><span>记录</span><span>${lineRecs.length}</span></div><div class="flex justify-between"><span>不合理(KG)</span><span class="text-danger">${w}</span></div><div class="flex justify-between"><span>A班</span><span>${lineRecs.filter(r=>r.team==='A班').length}</span></div><div class="flex justify-between"><span>B班</span><span>${lineRecs.filter(r=>r.team==='B班').length}</span></div></div></div>`;
+    }).join('');
+  }
+
+  function renderRankAndCharts() {
+    const records = getRecordsByMonth(currentViewMonth);
+    const aWeight = records.filter(r=>r.team==='A班').reduce((s,r)=>s+(+r.totalUnreasonable||0),0);
+    const bWeight = records.filter(r=>r.team==='B班').reduce((s,r)=>s+(+r.totalUnreasonable||0),0);
+    const teamRank = [{n:'A班',w:aWeight},{n:'B班',w:bWeight}].sort((x,y)=>y.w-x.w);
+    const rc = ['#EF4444','#F97316'];
+    let teamHtml = teamRank.map((t,i)=>`<div><div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm" style="background:${rc[i]}">${i+1}</span><span class="flex-1">${t.n}</span><span class="font-bold">${t.w.toFixed(2)} KG</span></div><div class="h-1.5 bg-gray-200 rounded mt-1"><div class="h-full ${t.n==='A班'?'bg-teamA':'bg-teamB'}" style="width:${teamRank[0].w?(t.w/teamRank[0].w)*100:0}%"></div></div></div>`).join('');
+    teamHtml += `<div class="mt-2 pt-1 total-row flex justify-between"><span>合计</span><span class="font-bold">${(aWeight+bWeight).toFixed(2)} KG</span></div>`;
+    document.getElementById('teamRankContainer').innerHTML = teamHtml;
+    const lineMap = {};
+    records.forEach(r => { lineMap[r.productionLine] = (lineMap[r.productionLine]||0) + (+r.totalUnreasonable||0); });
+    const lineRank = Object.entries(lineMap).map(([n,w])=>({n,w})).sort((a,b)=>b.w-a.w);
+    document.getElementById('lineRankContainer').innerHTML = lineRank.map((l,i)=>`<div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" style="background:${rc[i%2]}">${i+1}</span><span class="flex-1">${l.n}</span><span class="font-bold">${l.w.toFixed(2)} KG</span></div>`).join('');
+    const personMap = {};
+    records.forEach(r => { const key = `${r.team}-${r.personnel}`; if(!personMap[key]) personMap[key]={n:r.personnel,team:r.team,w:0}; personMap[key].w += (+r.totalUnreasonable||0); });
+    const personRank = Object.values(personMap).sort((a,b)=>b.w-a.w).slice(0,8);
+    document.getElementById('personRankContainer').innerHTML = personRank.map((p,i)=>`<div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" style="background:${rc[i%2]}">${i+1}</span><span class="flex-1">${p.n}<span class="text-xs ml-1 ${p.team==='A班'?'text-teamA':'text-teamB'}">${p.team}</span></span><span class="font-bold">${p.w.toFixed(2)} KG</span></div>`).join('');
+    // 图表
+    const totalStats={}, aStats={}, bStats={};
+    records.forEach(r=>{ const w=+r.totalUnreasonable||0; const items=r.abnormalSubItems||[]; if(!items.length||w<=0) return; const per=w/items.length; items.forEach(item=>{ const type=item.split('-')[0]; totalStats[type]=(totalStats[type]||0)+per; if(r.team==='A班') aStats[type]=(aStats[type]||0)+per; else bStats[type]=(bStats[type]||0)+per; }); });
+    const totalSum=Object.values(totalStats).reduce((a,b)=>a+b,0), aSum=Object.values(aStats).reduce((a,b)=>a+b,0), bSum=Object.values(bStats).reduce((a,b)=>a+b,0);
+    if(chartTotal) chartTotal.destroy(); if(chartA) chartA.destroy(); if(chartB) chartB.destroy();
+    const opts=(sum)=>({responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>`${c.label}: ${c.raw.toFixed(2)} KG (${sum?((c.raw/sum)*100).toFixed(1):0}%)`}}}});
+    chartTotal = new Chart(document.getElementById('abnormalTypeChart'),{type:'doughnut',data:{labels:Object.keys(totalStats),datasets:[{data:Object.values(totalStats),backgroundColor:['#165DFF','#C2410C','#0FC6C2','#F59E0B','#EF4444','#10B981']}]},options:opts(totalSum)});
+    chartA = new Chart(document.getElementById('teamAChart'),{type:'doughnut',data:{labels:Object.keys(aStats),datasets:[{data:Object.values(aStats),backgroundColor:['#165DFF','#0FC6C2','#F59E0B','#EF4444']}]},options:opts(aSum)});
+    chartB = new Chart(document.getElementById('teamBChart'),{type:'doughnut',data:{labels:Object.keys(bStats),datasets:[{data:Object.values(bStats),backgroundColor:['#C2410C','#F59E0B','#EF4444','#10B981']}]},options:opts(bSum)});
+    const legend = (stats,id,total)=>{ const c=document.getElementById(id); const sorted=Object.entries(stats).sort((a,b)=>b[1]-a[1]); if(!sorted.length){c.innerHTML='<div class="text-gray-400">无数据</div>';return;} c.innerHTML=sorted.map(([n,v],i)=>`<div class="flex justify-between text-xs"><div><span class="inline-block w-3 h-3 rounded-sm mr-1" style="background:${['#165DFF','#C2410C','#0FC6C2','#F59E0B','#EF4444','#10B981'][i%6]}"></span>${n}</div><span>${v.toFixed(2)} KG (${total?((v/total)*100).toFixed(1):0}%)</span></div>`).join(''); };
+    legend(totalStats,'totalChartLegend',totalSum); legend(aStats,'teamAChartLegend',aSum); legend(bStats,'teamBChartLegend',bSum);
+  }
+
+  function renderRecordTable(kw='') {
+    let records = getRecordsByMonth(currentViewMonth);
+    if(kw) records = records.filter(r=>JSON.stringify(r).includes(kw));
+    records.sort((a,b)=>new Date(b.createTime)-new Date(a.createTime));
+    const tbody = document.getElementById('recordTableBody');
+    const empty = document.getElementById('emptyRecordTip');
+    if(!records.length){ tbody.innerHTML=''; empty.classList.remove('hidden'); document.getElementById('recordMonthHint').innerText=`(${currentViewMonth} 无数据)`; return; }
+    empty.classList.add('hidden'); document.getElementById('recordMonthHint').innerText=`(${currentViewMonth} 共${records.length}条)`;
+    tbody.innerHTML = records.map(r=>`<tr class="border-b"><td class="p-1">${r.date}</td><td>${r.productionLine}</td><td><span class="px-2 py-0.5 rounded-full text-xs ${r.team==='A班'?'team-A':'team-B'}">${r.team}</span></td><td>${r.personnel}</td><td>${r.productModel||'-'}</td><td class="text-danger font-semibold">${(+r.totalUnreasonable).toFixed(2)} KG</td><td class="truncate max-w-[150px]">${(r.abnormalSubItems||[]).map(i=>i.split('-')[1]).join(',')}</td><td><button class="delete-record text-danger" data-id="${r.id}"><i class="fa fa-trash"></i></button></td></tr>`).join('');
+  }
+
+  function refreshAll() { if(!currentViewMonth) return; renderDashboard(); renderRankAndCharts(); renderRecordTable(); renderWeekly(); }
+
+  // 以下为基础管理渲染函数（保持不变）
+  function renderLineSelect() { const lines=storage.get(STORAGE.LINES)||[]; const sel=document.getElementById('productionLine'); sel.innerHTML='<option value="">选择</option>'; lines.forEach(l=>sel.add(new Option(l,l))); }
+  function renderPersonSelect(team) { const data=storage.get(STORAGE.PERSONS)||{}; const sel=document.getElementById('personnel'); const btn=document.getElementById('addPersonBtn'); if(!team){ sel.innerHTML='<option>先选班组</option>'; sel.disabled=true; btn.disabled=true; btn.className='px-3 bg-gray-200 rounded'; return; } const persons=data[team]||[]; sel.innerHTML=`<option value="">选择${team}人员</option>`; persons.forEach(p=>sel.add(new Option(p,p))); sel.disabled=false; btn.disabled=false; btn.className=`px-3 bg-${team==='A班'?'teamA':'teamB'}/10 rounded`; }
+  function renderAbnormalTypes() { const types=storage.get(STORAGE.TYPES)||[]; document.getElementById('abnormalTypeContainer').innerHTML=types.map(t=>`<div class="glass p-2 rounded"><div class="font-semibold text-sm">${t.name}</div><div class="flex flex-wrap gap-1 mt-1">${t.subItems.map(item=>`<label class="inline-flex items-center gap-1 bg-white/70 rounded-full px-2 py-0.5 text-xs"><input type="checkbox" name="abnormalSubItem" value="${t.name}-${item}"><span>${item}</span></label>`).join('')}</div></div>`).join(''); }
+  function renderLineManage() { const lines=storage.get(STORAGE.LINES)||[]; document.getElementById('lineManageContainer').innerHTML=lines.map(l=>`<div class="flex justify-between items-center p-2 bg-white/50 rounded"><span>${l}</span><button class="delete-line text-danger" data-line="${l}"><i class="fa fa-trash"></i></button></div>`).join(''); }
+  function renderPersonManage() { const data=storage.get(STORAGE.PERSONS)||{}; const persons=data[currentManageTeam]||[]; const cont=document.getElementById('personManageContainer'); cont.innerHTML=persons.length?persons.map(p=>`<div class="flex justify-between bg-white/50 p-2 rounded"><span>${p}</span><button class="delete-person text-danger" data-person="${p}" data-team="${currentManageTeam}"><i class="fa fa-trash"></i></button></div>`).join(''):'<div class="text-gray-400 text-center">暂无</div>'; document.getElementById('confirmAddPersonBtn').className=`px-3 py-1 bg-${currentManageTeam==='A班'?'teamA':'teamB'} text-white rounded`; }
+  function renderTypeManage() { const types=storage.get(STORAGE.TYPES)||[]; document.getElementById('typeManageContainer').innerHTML=types.map((t,i)=>`<div class="glass p-2 rounded"><div class="flex justify-between"><span class="font-bold">${i+1}. ${t.name}</span><div><button class="add-subitem text-success mr-2" data-id="${t.id}"><i class="fa fa-plus"></i> 子项</button><button class="delete-type text-danger" data-id="${t.id}"><i class="fa fa-trash"></i></button></div></div><div class="flex flex-wrap gap-1 mt-1">${t.subItems.map((item,idx)=>`<span class="bg-white/70 rounded-full px-2 py-0.5 text-xs inline-flex items-center gap-1">${item}<button class="delete-subitem text-danger" data-id="${t.id}" data-idx="${idx}"><i class="fa fa-times-circle"></i></button></span>`).join('')}</div></div>`).join(''); }
+
+  // 导出：保留原始导出字段与筛选规则，改为真实文件 Blob 下载
+  function getExportData() { let records = getRecordsByMonth(currentViewMonth); const kw = document.getElementById('searchRecord').value.trim(); if(kw) records = records.filter(r=>JSON.stringify(r).includes(kw)); if(!records.length) return null; const sheet=[['日期','生产线','班组','人员','产品型号','产量(KG)','不合理(KG)','异常类型','提交时间']]; records.forEach(r=>{ sheet.push([r.date,r.productionLine,r.team,r.personnel,r.productModel||'-',(r.productWeight||0).toFixed(2),(+r.totalUnreasonable||0).toFixed(2),(r.abnormalSubItems||[]).map(i=>i.split('-')[1]).join('、'),new Date(r.createTime).toLocaleString()]); }); return sheet; }
+  function generateExcel(sheet) {
+    if (typeof XLSX === 'undefined') throw new Error('Excel 组件未加载');
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sheet);
+    ws['!cols'] = [{wch:12},{wch:10},{wch:8},{wch:10},{wch:18},{wch:12},{wch:14},{wch:28},{wch:18}];
+    XLSX.utils.book_append_sheet(wb, ws, '回料异常');
+    const bytes = XLSX.write(wb, {bookType:'xlsx', type:'array', compression:true});
+    return new Blob([bytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  }
+  function generateCsv(sheet) {
+    const rows = sheet.map(row => row.map(c => {
+      let s = String(c ?? '');
+      if (/[",\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }).join(',')).join('\r\n');
+    return new Blob(["\uFEFF" + rows], {type:'text/csv;charset=utf-8'});
+  }
+  function prepareExport() {
+    if (!currentExportSheet) return;
+    currentExportBlob = currentFormat === 'excel' ? generateExcel(currentExportSheet) : generateCsv(currentExportSheet);
+    const ext = currentFormat === 'excel' ? 'xlsx' : 'csv';
+    currentExportName = '回料异常统计_' + currentViewMonth + '.' + ext;
+    document.getElementById('exportStatus').textContent = '已生成 ' + currentExportName + '，共 ' + Math.max(0, currentExportSheet.length - 1) + ' 条记录。点击“下载文件”保存到设备。';
+  }
+  function handleExport() {
+    const data = getExportData();
+    if (!data) { alert('当前月份无记录'); return; }
+    try {
+      currentExportSheet = data;
+      prepareExport();
+      const modal = document.getElementById('exportModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    } catch (error) {
+      console.error('导出失败：', error);
+      alert('导出失败：' + (error && error.message ? error.message : '请检查导出组件是否正常加载'));
+    }
+  }
+  function downloadExportFile() {
+    if (!currentExportBlob) return alert('请先生成导出文件');
+    const url = URL.createObjectURL(currentExportBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = currentExportName;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  async function shareExportFile() {
+    if (!currentExportBlob) return alert('请先生成导出文件');
+    try {
+      const file = new File([currentExportBlob], currentExportName, {type:currentExportBlob.type});
+      if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
+        await navigator.share({files:[file], title:currentExportName});
+      } else {
+        alert('当前浏览器不支持文件分享，请使用“下载文件”');
+      }
+    } catch (error) {
+      if (error && error.name !== 'AbortError') alert('分享失败，请改用“下载文件”');
+    }
+  }
+  function closeExport() {
+    const modal = document.getElementById('exportModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  function setExportFormat(fmt) {
+    currentFormat = fmt;
+    const excelBtn = document.getElementById('switchExcelBtn');
+    const csvBtn = document.getElementById('switchCsvBtn');
+    if (fmt === 'excel') {
+      excelBtn.className = 'px-4 py-2 rounded-full bg-primary text-white';
+      csvBtn.className = 'px-4 py-2 rounded-full bg-gray-200';
+    } else {
+      csvBtn.className = 'px-4 py-2 rounded-full bg-primary text-white';
+      excelBtn.className = 'px-4 py-2 rounded-full bg-gray-200';
+    }
+    if (currentExportSheet) {
+      try { prepareExport(); }
+      catch (error) { alert('文件生成失败：' + error.message); }
+    }
+  }
+
+  // 悬浮提交逻辑
+  function setupFloatSubmit() {
+    const floatBtn = document.getElementById('floatSubmitBtn');
+    floatBtn.addEventListener('click', () => {
+      // 切换到录入页
+      document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.remove('tab-active'));
+      document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
+      document.querySelector('.tab-btn[data-tab="form"]').classList.add('tab-active');
+      document.getElementById('form').classList.remove('hidden');
+      // 触发表单提交
+      document.getElementById('abnormalForm').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    });
+  }
+
+  // 初始化
+  function initData() {
+    if (!storage.get(STORAGE.TYPES)) storage.set(STORAGE.TYPES, defaultTypes);
+    if (!storage.get(STORAGE.LINES)) storage.set(STORAGE.LINES, defaultLines);
+    if (!storage.get(STORAGE.PERSONS)) storage.set(STORAGE.PERSONS, { "A班": ["张伟","李莉"], "B班": ["陈静","赵雷"] });
+    if (!storage.get(STORAGE.RECORDS)) storage.set(STORAGE.RECORDS, []);
+  }
+
+  function bindEvents() {
+    // 标签页切换
+    document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',function(){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('tab-active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden')); this.classList.add('tab-active'); document.getElementById(this.dataset.tab).classList.remove('hidden'); if(this.dataset.tab==='weekly') renderWeekly(); if(this.dataset.tab==='dashboard') renderDashboard(); if(this.dataset.tab==='rank') renderRankAndCharts(); if(this.dataset.tab==='record') renderRecordTable(); }));
+    // 表单计算
+    const calcTotal = () => { const prod=+document.getElementById('productWeight').value||0; const ded=Array.from(document.querySelectorAll('.deduction-input')).reduce((s,i)=>s+(+i.value||0),0); const total=Math.max(0,prod-ded).toFixed(2); document.getElementById('totalUnreasonable').textContent=total; document.getElementById('totalUnreasonableInput').value=total; };
+    document.getElementById('productWeight').addEventListener('input',calcTotal);
+    document.querySelectorAll('.deduction-input').forEach(i=>i.addEventListener('input',calcTotal));
+    document.getElementById('team').addEventListener('change',e=>renderPersonSelect(e.target.value));
+    // 表单提交
+    document.getElementById('abnormalForm').addEventListener('submit',e=>{ e.preventDefault(); const date=document.getElementById('recordDate').value, line=document.getElementById('productionLine').value, team=document.getElementById('team').value, person=document.getElementById('personnel').value; if(!date||!line||!team||!person) return alert('请填写完整信息'); const subItems=Array.from(document.querySelectorAll('input[name="abnormalSubItem"]:checked')).map(cb=>cb.value); if(!subItems.length) return alert('至少选一个异常类型'); const total=document.getElementById('totalUnreasonableInput').value; if(+total<=0) return alert('不合理总量必须>0'); const record={id:genId(),date,productionLine:line,team,personnel:person,productModel:document.getElementById('productModel').value,productWeight:document.getElementById('productWeight').value,totalUnreasonable:total,abnormalSubItems:subItems,createTime:new Date().toISOString()}; const records=storage.get(STORAGE.RECORDS)||[]; records.push(record); storage.set(STORAGE.RECORDS,records); e.target.reset(); document.getElementById('recordDate').value=getToday(); document.querySelectorAll('.deduction-input').forEach(i=>i.value='0'); calcTotal(); renderPersonSelect(''); alert('提交成功'); refreshAll(); });
+    // 管理事件
+    document.getElementById('addLineBtn').addEventListener('click',()=>{ const name=prompt('生产线名称'); if(name && !storage.get(STORAGE.LINES).includes(name)){ storage.set(STORAGE.LINES,[...storage.get(STORAGE.LINES),name]); renderLineSelect(); renderLineManage(); refreshAll(); } });
+    document.getElementById('confirmAddLineBtn').addEventListener('click',()=>{ const name=document.getElementById('newLineInput').value.trim(); if(name && !storage.get(STORAGE.LINES).includes(name)){ storage.set(STORAGE.LINES,[...storage.get(STORAGE.LINES),name]); document.getElementById('newLineInput').value=''; renderLineSelect(); renderLineManage(); refreshAll(); } });
+    document.addEventListener('click',e=>{ if(e.target.closest('.delete-line')){ const line=e.target.closest('.delete-line').dataset.line; if(confirm(`删除${line}?`)){ storage.set(STORAGE.LINES,storage.get(STORAGE.LINES).filter(l=>l!==line)); renderLineSelect(); renderLineManage(); refreshAll(); } } });
+    document.getElementById('addPersonBtn').addEventListener('click',()=>{ const team=document.getElementById('team').value; if(!team) return alert('先选班组'); const name=prompt(`添加${team}人员`); if(name){ const data=storage.get(STORAGE.PERSONS); if(!data[team].includes(name)){ data[team].push(name); storage.set(STORAGE.PERSONS,data); renderPersonSelect(team); renderPersonManage(); } } });
+    document.getElementById('confirmAddPersonBtn').addEventListener('click',()=>{ const name=document.getElementById('newPersonInput').value.trim(); if(name){ const data=storage.get(STORAGE.PERSONS); if(!data[currentManageTeam].includes(name)){ data[currentManageTeam].push(name); storage.set(STORAGE.PERSONS,data); renderPersonManage(); document.getElementById('newPersonInput').value=''; } } });
+    document.addEventListener('click',e=>{ if(e.target.closest('.delete-person')){ const btn=e.target.closest('.delete-person'); const team=btn.dataset.team, person=btn.dataset.person; if(confirm(`删除${team}的${person}?`)){ const data=storage.get(STORAGE.PERSONS); data[team]=data[team].filter(p=>p!==person); storage.set(STORAGE.PERSONS,data); renderPersonManage(); renderPersonSelect(document.getElementById('team').value); } } });
+    document.getElementById('manageTeamATab').addEventListener('click',()=>{ currentManageTeam='A班'; renderPersonManage(); });
+    document.getElementById('manageTeamBTab').addEventListener('click',()=>{ currentManageTeam='B班'; renderPersonManage(); });
+    document.getElementById('addTypeBtn').addEventListener('click',()=>{ const name=prompt('大类名称'); if(name){ const types=storage.get(STORAGE.TYPES); types.push({id:genId(),name,subItems:[]}); storage.set(STORAGE.TYPES,types); renderAbnormalTypes(); renderTypeManage(); } });
+    document.addEventListener('click',e=>{ if(e.target.closest('.delete-type')){ const id=e.target.closest('.delete-type').dataset.id; if(confirm('删除大类?')){ storage.set(STORAGE.TYPES,storage.get(STORAGE.TYPES).filter(t=>t.id!==id)); renderAbnormalTypes(); renderTypeManage(); } } if(e.target.closest('.add-subitem')){ const tid=e.target.closest('.add-subitem').dataset.id; const name=prompt('子项名称'); if(name){ const types=storage.get(STORAGE.TYPES); const idx=types.findIndex(t=>t.id===tid); if(idx!==-1){ types[idx].subItems.push(name); storage.set(STORAGE.TYPES,types); renderAbnormalTypes(); renderTypeManage(); } } } if(e.target.closest('.delete-subitem')){ const btn=e.target.closest('.delete-subitem'); const tid=btn.dataset.id, sidx=parseInt(btn.dataset.idx); const types=storage.get(STORAGE.TYPES); const idx=types.findIndex(t=>t.id===tid); if(idx!==-1){ types[idx].subItems.splice(sidx,1); storage.set(STORAGE.TYPES,types); renderAbnormalTypes(); renderTypeManage(); } } });
+    document.getElementById('searchRecord').addEventListener('input',e=>renderRecordTable(e.target.value));
+    document.getElementById('refreshRecordBtn').addEventListener('click',()=>{ document.getElementById('searchRecord').value=''; renderRecordTable(); });
+    document.addEventListener('click',e=>{ if(e.target.closest('.delete-record')){ const id=e.target.closest('.delete-record').dataset.id; if(confirm('删除记录?')){ const recs=storage.get(STORAGE.RECORDS).filter(r=>r.id!==id); storage.set(STORAGE.RECORDS,recs); refreshAll(); } } });
+    document.getElementById('exportBtn').addEventListener('click',handleExport);
+    document.getElementById('downloadExportBtn').addEventListener('click',downloadExportFile);
+    document.getElementById('shareExportBtn').addEventListener('click',shareExportFile);
+    document.getElementById('closeExportBtn').addEventListener('click',closeExport);
+    document.getElementById('switchExcelBtn').addEventListener('click',()=>setExportFormat('excel'));
+    document.getElementById('switchCsvBtn').addEventListener('click',()=>setExportFormat('csv'));
+    const monthPicker = document.getElementById('monthPicker');
+    const refreshBtn = document.getElementById('refreshMonthBtn');
+    monthPicker.addEventListener('change',()=>{ currentViewMonth = monthPicker.value; refreshAll(); });
+    refreshBtn.addEventListener('click',()=>{ if(monthPicker.value) currentViewMonth = monthPicker.value; refreshAll(); });
+  }
+
+  window.onload = () => {
+    initData();
+    currentViewMonth = getCurrentMonth();
+    document.getElementById('monthPicker').value = currentViewMonth;
+    document.getElementById('recordDate').value = getToday();
+    renderLineSelect(); renderPersonSelect(''); renderAbnormalTypes(); renderLineManage(); renderPersonManage(); renderTypeManage();
+    refreshAll();
+    bindEvents();
+    setupFloatSubmit();
+    // 默认打开录入页
+    document.querySelector('.tab-btn[data-tab="form"]').click();
+  };
+})();
+</script>
+</body>
+</html>
