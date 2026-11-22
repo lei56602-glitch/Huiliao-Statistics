@@ -55,11 +55,15 @@ internal fun ManagePage(
     lines: List<String>,
     personsA: List<String>,
     personsB: List<String>,
+    types: Map<String, List<String>>,
     team: String,
     onTeam: (String) -> Unit,
     onAdd: (String) -> Unit,
     onDeleteLine: (String) -> Unit,
-    onDeletePerson: (String) -> Unit
+    onDeletePerson: (String) -> Unit,
+    onDeleteType: (String) -> Unit,
+    onAddType: () -> Unit,\n    onAddSubitem: (String, String) -> Unit,
+    onDeleteSubitem: (String, String) -> Unit
 ) {
     val people = if (team == "A班") personsA else personsB
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -86,11 +90,21 @@ internal fun ManagePage(
             Button(onClick = { onAdd("person") }) { Text("添加人员") }
         }
         SectionCard("异常类型配置") {
-            Text("现阶段已将原有默认分类和子项迁入原生录入页。分类及子项的新增、删除、编辑仍需完成。", style = MaterialTheme.typography.bodySmall)
-            DefaultTypes.forEach { (name, children) ->
-                Text(name, fontWeight = FontWeight.SemiBold)
-                Text(children.joinToString("、"), style = MaterialTheme.typography.bodySmall)
+            types.forEach { (category, children) ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text(category, fontWeight = FontWeight.SemiBold)
+                    IconButton(onClick = { onDeleteType(category) }) { Icon(Icons.Default.Delete, null) }
+                }
+                children.forEach { item ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text(item, style = MaterialTheme.typography.bodySmall)
+                        IconButton(onClick = { onDeleteSubitem(category, item) }) { Icon(Icons.Default.Delete, null) }
+                    }
+                }
+                TextButton(onClick = { onAddSubitem("subitem:$category", category) }) { Text("添加子项") }
+                HorizontalDivider()
             }
+            Button(onClick = { onAddType() }) { Text("添加异常大类") }
         }
     }
 }
