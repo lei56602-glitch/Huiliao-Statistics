@@ -62,7 +62,8 @@ internal fun ManagePage(
     onDeleteLine: (String) -> Unit,
     onDeletePerson: (String) -> Unit,
     onDeleteType: (String) -> Unit,
-    onAddType: () -> Unit,\n    onAddSubitem: (String, String) -> Unit,
+    onAddType: () -> Unit,
+    onAddSubitem: (String, String) -> Unit,
     onDeleteSubitem: (String, String) -> Unit
 ) {
     val people = if (team == "A班") personsA else personsB
