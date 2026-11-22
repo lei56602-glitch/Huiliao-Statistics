@@ -87,7 +87,7 @@ internal fun NativeHuiliaoApp(
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
                 when (page) {
-                    0 -> EntryPage(lines, personsA, personsB, types, onSaveRecord)
+                    0 -> EntryPage(lines, personsA, personsB, types, onSaveRecord, { addTarget = "line"; addValue = ""; showAddDialog = true }, { addTarget = "person"; addValue = ""; showAddDialog = true })
                     1 -> DashboardPage(records.filter { it.date.startsWith(month) }, lines)
                     2 -> RankPage(records.filter { it.date.startsWith(month) })
                     3 -> WeeklyPage(records.filter { it.date.startsWith(month) }, month)
@@ -137,7 +137,7 @@ internal fun NativeHuiliaoApp(
 }
 
 @Composable
-private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: List<String>, types: Map<String, List<String>>, onSave: (ProductionRecord) -> Unit) {
+private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: List<String>, types: Map<String, List<String>>, onSave: (ProductionRecord) -> Unit, onAddLine: () -> Unit, onAddPerson: () -> Unit) {
     var date by remember { mutableStateOf(LocalDate.now().toString()) }
     var line by remember { mutableStateOf("") }
     var team by remember { mutableStateOf("") }
@@ -152,9 +152,16 @@ private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: Lis
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard("回收料异常记录") {
             OutlinedTextField(date, {}, enabled = false, label = { Text("日期") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-            ChoiceField("生产线", line, listOf("") + lines) { line = it }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ChoiceField("生产线", line, listOf("") + lines, modifier = Modifier.weight(1f)) { line = it }
+                IconButton(onClick = onAddLine) { Icon(Icons.Default.Add, "添加生产线") }
+            }
             ChoiceField("班组", team, listOf("", "A班", "B班")) { team = it; person = "" }
-            if (team.isBlank()) OutlinedTextField("先选班组", {}, enabled = false, label = { Text("人员") }, modifier = Modifier.fillMaxWidth()) else ChoiceField("人员", person, listOf("") + people) { person = it }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (team.isBlank()) OutlinedTextField("先选班组", {}, enabled = false, label = { Text("人员") }, modifier = Modifier.weight(1f))
+                else ChoiceField("人员", person, listOf("") + people, modifier = Modifier.weight(1f)) { person = it }
+                IconButton(enabled = team.isNotBlank(), onClick = onAddPerson) { Icon(Icons.Default.Add, "添加人员") }
+            }
             OutlinedTextField(model, { model = it }, label = { Text("产品型号") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(weight, { weight = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("数量 (KG)") }, modifier = Modifier.fillMaxWidth())
         }
@@ -253,10 +260,10 @@ private fun WeeklyPage(records: List<ProductionRecord>, month: String) {
 }
 
 @Composable
-private fun ChoiceField(label: String, value: String, options: List<String>, onSelect: (String) -> Unit) {
+private fun ChoiceField(label: String, value: String, options: List<String>, modifier: Modifier = Modifier.fillMaxWidth(), onSelect: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-        OutlinedTextField(value, {}, modifier = Modifier.fillMaxWidth().menuAnchor(), readOnly = true, label = { Text(label) }, placeholder = { Text("请选择") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) })
+        OutlinedTextField(value, {}, modifier = modifier.menuAnchor(), readOnly = true, label = { Text(label) }, placeholder = { Text("请选择") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) })
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option -> DropdownMenuItem(text = { Text(if (option.isBlank()) "选择" else option) }, onClick = { onSelect(option); expanded = false }) }
         }
