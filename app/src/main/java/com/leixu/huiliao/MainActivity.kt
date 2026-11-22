@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
                 onShare = { shareSavedFile() }
             )
         }
-        window.decorView.post { LegacyLocalStorageMigration.run(this, dao) { } }
+        window.decorView.post { LegacyLocalStorageMigration.run(this, dao) { recreate() } }
     }
 
     private fun beginExport(rows: List<List<String>>, excel: Boolean) {
