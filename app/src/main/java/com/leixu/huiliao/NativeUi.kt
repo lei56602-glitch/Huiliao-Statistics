@@ -139,20 +139,20 @@ internal fun NativeHuiliaoApp(
 @Composable
 private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: List<String>, types: Map<String, List<String>>, onSave: (ProductionRecord) -> Unit) {
     var date by remember { mutableStateOf(LocalDate.now().toString()) }
-    var line by remember { mutableStateOf(lines.firstOrNull().orEmpty()) }
-    var team by remember { mutableStateOf("A班") }
-    var person by remember { mutableStateOf(personsA.firstOrNull().orEmpty()) }
+    var line by remember { mutableStateOf("") }
+    var team by remember { mutableStateOf("") }
+    var person by remember { mutableStateOf("") }
     var model by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
     var deductions by remember { mutableStateOf(listOf("0", "0", "0", "0")) }
     var selected by remember { mutableStateOf(setOf<String>()) }
-    val people = if (team == "A班") personsA else personsB
+    val people = when (team) { "A班" -> personsA; "B班" -> personsB; else -> emptyList() }
     val context = androidx.compose.ui.platform.LocalContext.current
     val total = ((weight.toDoubleOrNull() ?: 0.0) - deductions.sumOf { it.toDoubleOrNull() ?: 0.0 }).coerceAtLeast(0.0)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard("回收料异常记录") {
             OutlinedTextField(date, {}, enabled = false, label = { Text("日期") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-            ChoiceField("生产线", line, lines) { line = it }
+            ChoiceField("生产线", line, listOf("") + lines) { line = it }
             ChoiceField("班组", team, listOf("A班", "B班")) { team = it; person = (if (it == "A班") personsA else personsB).firstOrNull().orEmpty() }
             ChoiceField("人员", person, people) { person = it }
             OutlinedTextField(model, { model = it }, label = { Text("产品型号") }, modifier = Modifier.fillMaxWidth())
@@ -179,7 +179,7 @@ private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: Lis
         Button(onClick = {
             if (date.isNotBlank() && line.isNotBlank() && team.isNotBlank() && person.isNotBlank() && selected.isNotEmpty() && total > 0) {
                 onSave(ProductionRecord("${System.currentTimeMillis()}-${(0..9999).random()}", date, line, team, person, model, weight.toDoubleOrNull() ?: 0.0, total, JSONArray(selected.toList()).toString(), java.time.Instant.now().toString()))
-                model = ""; weight = ""; deductions = listOf("0", "0", "0", "0"); selected = emptySet()
+                line = ""; team = ""; person = ""; model = ""; weight = ""; deductions = listOf("0", "0", "0", "0"); selected = emptySet()
                 android.widget.Toast.makeText(context, "提交成功", android.widget.Toast.LENGTH_SHORT).show()
             } else {
                 android.widget.Toast.makeText(context, "请填写完整信息、选择异常类型，并确保不合理数量大于 0", android.widget.Toast.LENGTH_LONG).show()
@@ -256,9 +256,9 @@ private fun WeeklyPage(records: List<ProductionRecord>, month: String) {
 private fun ChoiceField(label: String, value: String, options: List<String>, onSelect: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-        OutlinedTextField(value, {}, modifier = Modifier.fillMaxWidth().menuAnchor(), readOnly = true, label = { Text(label) }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) })
+        OutlinedTextField(value, {}, modifier = Modifier.fillMaxWidth().menuAnchor(), readOnly = true, label = { Text(label) }, placeholder = { Text("请选择") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) })
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { DropdownMenuItem(text = { Text(it) }, onClick = { onSelect(it); expanded = false }) }
+            options.forEach { option -> DropdownMenuItem(text = { Text(if (option.isBlank()) "选择" else option) }, onClick = { onSelect(option); expanded = false }) }
         }
     }
 }
