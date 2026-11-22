@@ -134,7 +134,7 @@ private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: Lis
     val total = ((weight.toDoubleOrNull() ?: 0.0) - deductions.sumOf { it.toDoubleOrNull() ?: 0.0 }).coerceAtLeast(0.0)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard("回收料异常记录") {
-            OutlinedTextField(date, { date = it }, label = { Text("日期 YYYY-MM-DD") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(date, {}, enabled = false, label = { Text("日期") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
             ChoiceField("生产线", line, lines) { line = it }
             ChoiceField("班组", team, listOf("A班", "B班")) { team = it; person = (if (it == "A班") personsA else personsB).firstOrNull().orEmpty() }
             ChoiceField("人员", person, people) { person = it }
@@ -194,9 +194,14 @@ private fun RankPage(records: List<ProductionRecord>) {
         SectionCard("班组排行") { RankedRows(teams) }
         SectionCard("线别排行") { RankedRows(lines) }
         SectionCard("人员排行") { RankedRows(people) }
-        SectionCard("异常类型分布 (KG)") {
-            val stats = abnormalStats(records)
-            if (stats.isEmpty()) Text("暂无数据") else stats.forEach { (name, value) -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(name); Text("%.2f KG".format(value)) } }
+        listOf("总异常类型分布" to records, "A班异常分布" to records.filter { it.team == "A班" }, "B班异常分布" to records.filter { it.team == "B班" }).forEach { (title, source) ->
+            SectionCard("$title (KG)") {
+                val stats = abnormalStats(source)
+                if (stats.isEmpty()) Text("暂无数据") else {
+                    DonutChart(stats)
+                    stats.forEach { (name, value) -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(name); Text("%.2f KG".format(value)) } }
+                }
+            }
         }
     }
 }
