@@ -113,7 +113,3 @@ internal object LegacyLocalStorageMigration {
     }
 }
 
-/** Avoid holding a coroutine dependency inside the migration helper's public API. */
-private fun Activity.lifecycleScopeCompat(block: suspend () -> Unit) {
-    androidx.lifecycle.lifecycleScope.launchWhenResumed { block() }
-}
