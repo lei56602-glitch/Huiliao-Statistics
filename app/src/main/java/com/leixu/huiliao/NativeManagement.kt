@@ -23,8 +23,9 @@ internal fun RecordPage(
     onExport: (List<List<String>>, Boolean) -> Unit,
     onShare: () -> Unit
 ) {
+    var deleteTarget by remember { mutableStateOf<ProductionRecord?>(null) }
     val filtered = records.filter { r ->
-        listOf(r.date, r.productionLine, r.team, r.personnel, r.productModel, r.abnormalSubItems).any { it.contains(query, true) }
+        listOf(r.id, r.date, r.productionLine, r.team, r.personnel, r.productModel, r.productWeight.toString(), r.totalUnreasonable.toString(), r.abnormalSubItems, r.createTime).any { it.contains(query, true) }
     }.sortedByDescending { it.createTime }
     Column(Modifier.fillMaxSize().padding(vertical = 10.dp)) {
         OutlinedTextField(query, onQuery, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("搜索记录") }, leadingIcon = { Icon(Icons.Default.Search, null) })
@@ -36,18 +37,28 @@ internal fun RecordPage(
         if (filtered.isEmpty()) {
             Text("当前月份暂无记录", modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(filtered, key = { it.id }) { r ->
                     SectionCard(r.date + " · " + r.productionLine + " · " + r.team) {
                         Text("${r.personnel} · ${r.productModel.ifBlank { "-" }}")
                         Text("%.2f KG".format(r.totalUnreasonable), color = AppBlue, fontWeight = FontWeight.Bold)
                         Text(parseSubItems(r.abnormalSubItems).joinToString("、") { it.substringAfter("-", it) }, style = MaterialTheme.typography.bodySmall)
-                        TextButton(onClick = { onDelete(r.id) }) { Icon(Icons.Default.Delete, null); Text("删除") }
+                        TextButton(onClick = { deleteTarget = r }) { Icon(Icons.Default.Delete, null); Text("删除") }
                     }
                 }
             }
         }
     }
+    deleteTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("删除记录") },
+            text = { Text("确定删除 " + target.date + " · " + target.personnel + " 的这条记录吗？") },
+            confirmButton = { TextButton(onClick = { onDelete(target.id); deleteTarget = null }) { Text("删除") } },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("取消") } }
+        )
+    }
+
 }
 
 @Composable
