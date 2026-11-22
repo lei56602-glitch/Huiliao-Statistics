@@ -87,7 +87,7 @@ internal fun NativeHuiliaoApp(
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
                 when (page) {
-                    0 -> EntryPage(lines, personsA, personsB, types, onSaveRecord, { addTarget = "line"; addValue = ""; showAddDialog = true }, { addTarget = "person"; addValue = ""; showAddDialog = true })
+                    0 -> EntryPage(lines, personsA, personsB, types, onSaveRecord, { addTarget = "line"; addValue = ""; showAddDialog = true }, { selectedTeam -> manageTeam = selectedTeam; addTarget = "person"; addValue = ""; showAddDialog = true })
                     1 -> DashboardPage(records.filter { it.date.startsWith(month) }, lines)
                     2 -> RankPage(records.filter { it.date.startsWith(month) })
                     3 -> WeeklyPage(records.filter { it.date.startsWith(month) }, month)
@@ -137,7 +137,7 @@ internal fun NativeHuiliaoApp(
 }
 
 @Composable
-private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: List<String>, types: Map<String, List<String>>, onSave: (ProductionRecord) -> Unit, onAddLine: () -> Unit, onAddPerson: () -> Unit) {
+private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: List<String>, types: Map<String, List<String>>, onSave: (ProductionRecord) -> Unit, onAddLine: () -> Unit, onAddPerson: (String) -> Unit) {
     var date by remember { mutableStateOf(LocalDate.now().toString()) }
     var line by remember { mutableStateOf("") }
     var team by remember { mutableStateOf("") }
@@ -160,7 +160,7 @@ private fun EntryPage(lines: List<String>, personsA: List<String>, personsB: Lis
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (team.isBlank()) OutlinedTextField("先选班组", {}, enabled = false, label = { Text("人员") }, modifier = Modifier.weight(1f))
                 else ChoiceField("人员", person, listOf("") + people, modifier = Modifier.weight(1f)) { person = it }
-                IconButton(enabled = team.isNotBlank(), onClick = onAddPerson) { Icon(Icons.Default.Add, "添加人员") }
+                IconButton(enabled = team.isNotBlank(), onClick = { onAddPerson(team) }) { Icon(Icons.Default.Add, "添加人员") }
             }
             OutlinedTextField(model, { model = it }, label = { Text("产品型号") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(weight, { weight = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("数量 (KG)") }, modifier = Modifier.fillMaxWidth())
