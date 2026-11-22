@@ -435,14 +435,17 @@
   }
   function downloadExportFile() {
     if (!currentExportBlob) return alert('请先生成导出文件');
+    if (window.AndroidBridge && typeof window.AndroidBridge.saveBase64 === 'function') {
+      const reader = new FileReader();
+      reader.onload = () => window.AndroidBridge.saveBase64(String(reader.result).split(',')[1] || '', currentExportName, currentExportBlob.type);
+      reader.onerror = () => alert('文件读取失败，请重试');
+      reader.readAsDataURL(currentExportBlob);
+      return;
+    }
     const url = URL.createObjectURL(currentExportBlob);
     const link = document.createElement('a');
-    link.href = url;
-    link.download = currentExportName;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    link.href = url; link.download = currentExportName; link.style.display = 'none';
+    document.body.appendChild(link); link.click(); link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
   async function shareExportFile() {
