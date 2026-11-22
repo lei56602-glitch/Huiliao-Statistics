@@ -26,11 +26,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.statusBarColor = android.graphics.Color.rgb(248, 250, 252)
-        window.navigationBarColor = android.graphics.Color.rgb(248, 250, 252)
-        window.decorView.systemUiVisibility =
-            android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
-                android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        // Android 15+ enforces edge-to-edge for targetSdk 35.
+        // Keep the WebView content below the real status-bar inset.
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        androidx.core.view.WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
+        }
 
         xlsxLauncher = registerForActivityResult(
             ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -44,9 +48,12 @@ class MainActivity : ComponentActivity() {
         ) { uri -> writeExport(uri) }
 
         webView = WebView(this)
-        webView.setOnApplyWindowInsetsListener { view, insets ->
-            view.setPadding(0, insets.systemWindowInsetTop, 0, 0)
-            insets
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
+            val statusBarTop = insets.getInsets(
+                androidx.core.view.WindowInsetsCompat.Type.statusBars()
+            ).top
+            view.setPadding(0, statusBarTop, 0, 0)
+            androidx.core.view.WindowInsetsCompat.CONSUMED
         }
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
