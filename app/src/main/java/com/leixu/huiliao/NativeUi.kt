@@ -235,7 +235,6 @@ private fun RankPage(records: List<ProductionRecord>) {
     }
 }
 
-@Composable
 private data class WeekSummary(val label: String, val a: Double, val b: Double, val count: Int)
 
 @Composable
