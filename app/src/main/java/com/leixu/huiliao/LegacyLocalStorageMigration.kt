@@ -9,6 +9,8 @@ import android.widget.FrameLayout
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -65,7 +67,7 @@ internal object LegacyLocalStorageMigration {
                         val rawRecords = payload.optString("records", "")
                         val imported = parseRecords(rawRecords)
                         activity.runOnUiThread {
-                            activity.lifecycleScopeCompat {
+                            activity.lifecycleScope.launch {
                                 if (imported.isNotEmpty()) dao.insertAll(imported)
                                 prefs.edit().putBoolean("legacy_migration_done", true).apply()
                                 cleanup()
