@@ -792,6 +792,8 @@
       document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
       document.querySelector('.tab-btn[data-tab="form"]').classList.add('tab-active');
       document.getElementById('form').classList.remove('hidden');
+      // 切换到录入页后，悬浮按钮立即隐藏
+      floatBtn.classList.remove('is-visible');
       // 触发表单提交
       document.getElementById('abnormalForm').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
     });
