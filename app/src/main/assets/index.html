@@ -29,6 +29,41 @@
     }
     .float-submit-btn:active { transform: scale(0.96); }
     @media (max-width: 640px) { .float-submit-btn { padding: 10px 18px; font-size: 14px; } }
+    .abnormal-type-options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 6px;
+      row-gap: 6px;
+      align-items: stretch;
+    }
+    .abnormal-type-option {
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 5px;
+      width: 100%;
+      min-width: 0;
+      min-height: 36px;
+      padding: 5px 4px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 13px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+    .abnormal-type-option input[type="checkbox"] {
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: #165DFF;
+    }
+    .abnormal-type-option span {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
   </style>
   <script>
     tailwind.config = { theme: { extend: { colors: { primary: '#165DFF', secondary: '#C2410C', success: '#10B981' } } } }
@@ -277,7 +312,22 @@
   // 以下为基础管理渲染函数（保持不变）
   function renderLineSelect() { const lines=storage.get(STORAGE.LINES)||[]; const sel=document.getElementById('productionLine'); sel.innerHTML='<option value="">选择</option>'; lines.forEach(l=>sel.add(new Option(l,l))); }
   function renderPersonSelect(team) { const data=storage.get(STORAGE.PERSONS)||{}; const sel=document.getElementById('personnel'); const btn=document.getElementById('addPersonBtn'); if(!team){ sel.innerHTML='<option>先选班组</option>'; sel.disabled=true; btn.disabled=true; btn.className='px-3 bg-gray-200 rounded'; return; } const persons=data[team]||[]; sel.innerHTML=`<option value="">选择${team}人员</option>`; persons.forEach(p=>sel.add(new Option(p,p))); sel.disabled=false; btn.disabled=false; btn.className=`px-3 bg-${team==='A班'?'teamA':'teamB'}/10 rounded`; }
-  function renderAbnormalTypes() { const types=storage.get(STORAGE.TYPES)||[]; document.getElementById('abnormalTypeContainer').innerHTML=types.map(t=>`<div class="glass p-2 rounded"><div class="font-semibold text-sm">${t.name}</div><div class="flex flex-wrap gap-1 mt-1">${t.subItems.map(item=>`<label class="inline-flex items-center gap-1 bg-white/70 rounded-full px-2 py-0.5 text-xs"><input type="checkbox" name="abnormalSubItem" value="${t.name}-${item}"><span>${item}</span></label>`).join('')}</div></div>`).join(''); }
+  function renderAbnormalTypes() {
+    const types = storage.get(STORAGE.TYPES) || [];
+    document.getElementById('abnormalTypeContainer').innerHTML = types.map(t => `
+      <div class="glass p-2 rounded">
+        <div class="font-semibold text-sm">${t.name}</div>
+        <div class="abnormal-type-options mt-2">
+          ${t.subItems.map(item => `
+            <label class="abnormal-type-option">
+              <input type="checkbox" name="abnormalSubItem" value="${t.name}-${item}">
+              <span>${item}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
   function renderLineManage() { const lines=storage.get(STORAGE.LINES)||[]; document.getElementById('lineManageContainer').innerHTML=lines.map(l=>`<div class="flex justify-between items-center p-2 bg-white/50 rounded"><span>${l}</span><button class="delete-line text-danger" data-line="${l}"><i class="fa fa-trash"></i></button></div>`).join(''); }
   function renderPersonManage() { const data=storage.get(STORAGE.PERSONS)||{}; const persons=data[currentManageTeam]||[]; const cont=document.getElementById('personManageContainer'); cont.innerHTML=persons.length?persons.map(p=>`<div class="flex justify-between bg-white/50 p-2 rounded"><span>${p}</span><button class="delete-person text-danger" data-person="${p}" data-team="${currentManageTeam}"><i class="fa fa-trash"></i></button></div>`).join(''):'<div class="text-gray-400 text-center">暂无</div>'; document.getElementById('confirmAddPersonBtn').className=`px-3 py-1 bg-${currentManageTeam==='A班'?'teamA':'teamB'} text-white rounded`; }
   function renderTypeManage() { const types=storage.get(STORAGE.TYPES)||[]; document.getElementById('typeManageContainer').innerHTML=types.map((t,i)=>`<div class="glass p-2 rounded"><div class="flex justify-between"><span class="font-bold">${i+1}. ${t.name}</span><div><button class="add-subitem text-success mr-2" data-id="${t.id}"><i class="fa fa-plus"></i> 子项</button><button class="delete-type text-danger" data-id="${t.id}"><i class="fa fa-trash"></i></button></div></div><div class="flex flex-wrap gap-1 mt-1">${t.subItems.map((item,idx)=>`<span class="bg-white/70 rounded-full px-2 py-0.5 text-xs inline-flex items-center gap-1">${item}<button class="delete-subitem text-danger" data-id="${t.id}" data-idx="${idx}"><i class="fa fa-times-circle"></i></button></span>`).join('')}</div></div>`).join(''); }
