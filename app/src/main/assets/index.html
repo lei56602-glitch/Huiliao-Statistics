@@ -787,14 +787,7 @@
   function setupFloatSubmit() {
     const floatBtn = document.getElementById('floatSubmitBtn');
     floatBtn.addEventListener('click', () => {
-      // 切换到录入页
-      document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.remove('tab-active'));
-      document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
-      document.querySelector('.tab-btn[data-tab="form"]').classList.add('tab-active');
-      document.getElementById('form').classList.remove('hidden');
-      // 切换到录入页后，悬浮按钮立即隐藏
-      floatBtn.classList.remove('is-visible');
-      // 触发表单提交
+      // 悬浮按钮只在录入页显示，点击后直接提交当前表单
       document.getElementById('abnormalForm').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
     });
   }
@@ -809,7 +802,7 @@
 
   function bindEvents() {
     // 标签页切换
-    document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',function(){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('tab-active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden')); this.classList.add('tab-active'); document.getElementById(this.dataset.tab).classList.remove('hidden'); document.getElementById('floatSubmitBtn').classList.toggle('is-visible', this.dataset.tab==='record'); if(this.dataset.tab==='weekly') renderWeekly(); if(this.dataset.tab==='dashboard') renderDashboard(); if(this.dataset.tab==='rank') renderRankAndCharts(); if(this.dataset.tab==='record') renderRecordTable(); }));
+    document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',function(){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('tab-active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden')); this.classList.add('tab-active'); document.getElementById(this.dataset.tab).classList.remove('hidden'); document.getElementById('floatSubmitBtn').classList.toggle('is-visible', this.dataset.tab==='form'); if(this.dataset.tab==='weekly') renderWeekly(); if(this.dataset.tab==='dashboard') renderDashboard(); if(this.dataset.tab==='rank') renderRankAndCharts(); if(this.dataset.tab==='record') renderRecordTable(); }));
     // 表单计算
     const calcTotal = () => { const prod=+document.getElementById('productWeight').value||0; const ded=Array.from(document.querySelectorAll('.deduction-input')).reduce((s,i)=>s+(+i.value||0),0); const total=Math.max(0,prod-ded).toFixed(2); document.getElementById('totalUnreasonable').textContent=total; document.getElementById('totalUnreasonableInput').value=total; };
     document.getElementById('productWeight').addEventListener('input',calcTotal);
