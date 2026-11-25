@@ -92,6 +92,71 @@
       .line-dashboard-content { padding: 8px 7px; }
       .line-dashboard-meta { font-size: 9px; }
     }
+    /* 排行卡片：两列紧凑布局，第五名横跨整行 */
+    .rank-card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .rank-data-card {
+      display: flex;
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 11px;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 1px 3px rgba(15,23,42,0.045);
+    }
+    .rank-data-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .rank-card-color { flex: 0 0 5px; }
+    .rank-card-body { flex: 1; min-width: 0; padding: 9px 10px; }
+    .rank-card-top { display:flex; align-items:center; gap:6px; min-width:0; }
+    .rank-card-name {
+      min-width:0; flex:1; color:#334155; font-size:14px;
+      line-height:1.3; font-weight:750; overflow-wrap:anywhere;
+    }
+    .rank-card-team { flex:0 0 auto; font-size:10px; font-weight:600; }
+    .rank-card-place {
+      flex:0 0 auto; color:#64748b; background:#f1f5f9;
+      border-radius:999px; padding:2px 6px; font-size:10px; font-weight:700;
+    }
+    .rank-card-weight {
+      margin-top:5px; color:#1e293b; font-size:clamp(19px,5vw,23px);
+      font-weight:800; line-height:1.15; letter-spacing:-0.35px;
+      overflow-wrap:anywhere;
+    }
+    .rank-card-unit { color:#64748b; font-size:10px; font-weight:500; }
+    .rank-empty { grid-column:1/-1; padding:14px 8px; text-align:center; color:#94a3b8; font-size:12px; }
+    /* 异常分布：三条比例带与同色类型明细表 */
+    .abnormal-distribution { margin-top:12px; }
+    .distribution-row { display:grid; grid-template-columns:62px minmax(0,1fr); align-items:center; gap:9px; margin-top:10px; }
+    .distribution-label { font-size:12px; font-weight:700; color:#475569; white-space:nowrap; }
+    .distribution-track {
+      display:flex; width:100%; height:15px; overflow:hidden;
+      border-radius:5px; background:#eef2f7; box-shadow:inset 0 0 0 1px rgba(148,163,184,.12);
+    }
+    .distribution-segment { height:100%; min-width:0; }
+    .distribution-empty { height:15px; border-radius:5px; background:#eef2f7; }
+    .distribution-legend { display:flex; flex-wrap:wrap; gap:5px 11px; margin:10px 0 9px 71px; }
+    .distribution-legend-item { display:inline-flex; align-items:center; gap:4px; color:#64748b; font-size:10px; }
+    .distribution-dot { width:8px; height:8px; flex:0 0 8px; border-radius:2px; }
+    .distribution-table-wrap { overflow-x:auto; }
+    .distribution-table { width:100%; min-width:310px; border-collapse:collapse; table-layout:fixed; font-size:11px; }
+    .distribution-table th, .distribution-table td { padding:8px 5px; text-align:right; white-space:nowrap; }
+    .distribution-table thead th { color:#64748b; background:#f8fafc; font-weight:700; }
+    .distribution-table th:first-child, .distribution-table td:first-child { width:31%; text-align:left; }
+    .distribution-table th:nth-child(3), .distribution-table td:nth-child(3),
+    .distribution-table th:nth-child(4), .distribution-table td:nth-child(4) { border-left:1px solid #e2e8f0; }
+    .distribution-table tbody tr { border-top:1px solid #edf1f5; }
+    .distribution-type { display:inline-flex; align-items:center; gap:5px; min-width:0; font-weight:600; color:#334155; }
+    .distribution-value { color:#334155; font-variant-numeric:tabular-nums; }
+    @media (max-width:360px) {
+      .rank-card-body { padding:8px 7px; }
+      .rank-card-name { font-size:13px; }
+      .distribution-row { grid-template-columns:56px minmax(0,1fr); gap:7px; }
+      .distribution-legend { margin-left:63px; }
+      .distribution-table th, .distribution-table td { padding:7px 3px; font-size:10px; }
+    }
     .abnormal-type-options {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -133,9 +198,6 @@
   </script>
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-amber-50">
-
-<!-- 悬浮提交按钮 -->
-<button id="floatSubmitBtn" class="float-submit-btn"><i class="fa fa-check-circle"></i> 提交记录</button>
 
 <!-- 导出模态框 -->
 <div id="exportModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden items-center justify-center p-4">
@@ -207,6 +269,7 @@
         </div>
         <div class="md:col-span-2"><h3 class="font-semibold mb-1">异常类型 (多选)</h3><div id="abnormalTypeContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div></div>
       </form>
+      <div class="flex justify-end mt-3"><button id="floatSubmitBtn" class="float-submit-btn !static !z-auto !m-0"><i class="fa fa-check-circle"></i> 提交记录</button></div>
     </div>
   </section>
 
@@ -214,7 +277,35 @@
   <section id="dashboard" class="tab-content hidden"><div class="glass rounded-xl p-3"><h2 class="text-lg font-bold">月度数据总览 <span id="dashboardMonth" class="text-sm bg-gray-200 px-2 rounded-full"></span></h2><div class="grid grid-cols-2 gap-3 my-3"><div class="glass p-3"><div class="text-gray-500">总记录</div><div id="totalRecordCount" class="text-2xl font-bold text-primary">0</div></div><div class="glass p-3"><div class="text-gray-500">总不合理(KG)</div><div id="totalUnreasonableWeight" class="text-2xl font-bold text-danger">0.00</div></div><div class="glass p-3 team-A"><div class="text-sm">A班记录</div><div id="teamATotal" class="text-2xl font-bold">0</div></div><div class="glass p-3 team-B"><div class="text-sm">B班记录</div><div id="teamBTotal" class="text-2xl font-bold">0</div></div></div><h2 class="font-bold">生产线看板</h2><div id="lineDashboardContainer" class="line-dashboard-grid mt-2"></div></div></section>
 
   <!-- 排行 -->
-  <section id="rank" class="tab-content hidden"><div class="glass rounded-xl p-3"><div class="grid lg:grid-cols-3 gap-3"><div class="glass p-3"><h3 class="font-bold"><i class="fa fa-users"></i> 班组排行</h3><div id="teamRankContainer" class="space-y-2 mt-2"></div></div><div class="glass p-3"><h3 class="font-bold"><i class="fa fa-industry"></i> 线别排行</h3><div id="lineRankContainer" class="space-y-2 mt-2"></div></div><div class="glass p-3"><h3 class="font-bold"><i class="fa fa-user"></i> 人员排行</h3><div id="personRankContainer" class="space-y-2 mt-2"></div></div></div><div class="mt-3 glass p-3"><h3 class="font-bold">总异常类型分布图 (KG)</h3><div class="h-52"><canvas id="abnormalTypeChart"></canvas></div><div id="totalChartLegend" class="grid grid-cols-2 gap-1 text-sm mt-2"></div></div><div class="mt-3 grid lg:grid-cols-2 gap-3"><div class="glass p-3"><h3 class="font-bold text-teamA">A班异常分布</h3><div class="h-44"><canvas id="teamAChart"></canvas></div><div id="teamAChartLegend" class="text-sm mt-1"></div></div><div class="glass p-3"><h3 class="font-bold text-teamB">B班异常分布</h3><div class="h-44"><canvas id="teamBChart"></canvas></div><div id="teamBChartLegend" class="text-sm mt-1"></div></div></div></div></section>
+  <section id="rank" class="tab-content hidden">
+    <div class="glass rounded-xl p-3 space-y-3">
+      <div class="glass p-3 rounded-xl">
+        <h3 class="font-bold"><i class="fa fa-users"></i> 班组排行</h3>
+        <div id="teamRankContainer" class="space-y-2 mt-2"></div>
+      </div>
+      <div class="glass p-3 rounded-xl">
+        <h3 class="font-bold"><i class="fa fa-industry"></i> 生产线排行</h3>
+        <div id="lineRankContainer" class="rank-card-grid mt-2"></div>
+      </div>
+      <div class="glass p-3 rounded-xl">
+        <h3 class="font-bold"><i class="fa fa-user"></i> 人员排行</h3>
+        <div id="personRankContainer" class="rank-card-grid mt-2"></div>
+      </div>
+      <div class="glass p-3 rounded-xl">
+        <h3 class="font-bold">异常类型分布</h3>
+        <div class="abnormal-distribution">
+          <div id="abnormalDistributionBars"></div>
+          <div id="abnormalDistributionLegend" class="distribution-legend"></div>
+          <div class="distribution-table-wrap">
+            <table class="distribution-table">
+              <thead><tr><th>异常类型</th><th>总异常</th><th>A班</th><th>B班</th></tr></thead>
+              <tbody id="abnormalDistributionTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- 周对比（新增） -->
   <section id="weekly" class="tab-content hidden"><div class="glass rounded-xl p-3 space-y-3"><div class="flex justify-between items-center"><h2 class="text-xl font-bold"><i class="fa fa-calendar-week text-primary"></i> 每周数据统计对比</h2><span id="weeklyMonthBadge" class="bg-gray-200 px-3 py-1 rounded-full text-sm font-mono"></span></div><div class="bg-amber-50 p-2 rounded text-sm">📌 自然周（周一~周日）聚合，展示A班/B班合计重量，底部汇总当月总计。</div><div class="h-72"><canvas id="weeklyChart"></canvas></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-100"><tr><th class="p-2 text-left">周区间</th><th class="p-2 text-right">A班(KG)</th><th class="p-2 text-right">B班(KG)</th><th class="p-2 text-right">合计(KG)</th><th class="p-2 text-right">条数</th></tr></thead><tbody id="weeklyTableBody"></tbody><tfoot class="bg-green-100 font-bold"><tr><td class="p-2 text-right">本月总计</td><td id="monthTotalA" class="p-2 text-right text-teamA">0.00</td><td id="monthTotalB" class="p-2 text-right text-teamB">0.00</td><td id="monthTotalSum" class="p-2 text-right text-danger">0.00</td><td id="monthTotalCount" class="p-2 text-right">0</td></tr></tfoot></table></div></div></section>
@@ -386,25 +477,113 @@
     let teamHtml = teamRank.map((t,i)=>`<div><div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm" style="background:${rc[i]}">${i+1}</span><span class="flex-1">${t.n}</span><span class="font-bold">${t.w.toFixed(2)} KG</span></div><div class="h-1.5 bg-gray-200 rounded mt-1"><div class="h-full ${t.n==='A班'?'bg-teamA':'bg-teamB'}" style="width:${teamRank[0].w?(t.w/teamRank[0].w)*100:0}%"></div></div></div>`).join('');
     teamHtml += `<div class="mt-2 pt-1 total-row flex justify-between"><span>合计</span><span class="font-bold">${(aWeight+bWeight).toFixed(2)} KG</span></div>`;
     document.getElementById('teamRankContainer').innerHTML = teamHtml;
+
     const lineMap = {};
     records.forEach(r => { lineMap[r.productionLine] = (lineMap[r.productionLine]||0) + (+r.totalUnreasonable||0); });
-    const lineRank = Object.entries(lineMap).map(([n,w])=>({n,w})).sort((a,b)=>b.w-a.w);
-    document.getElementById('lineRankContainer').innerHTML = lineRank.map((l,i)=>`<div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" style="background:${rc[i%2]}">${i+1}</span><span class="flex-1">${l.n}</span><span class="font-bold">${l.w.toFixed(2)} KG</span></div>`).join('');
+    const lineRank = Object.entries(lineMap).map(([n,w])=>({n,w})).sort((a,b)=>b.w-a.w).slice(0,5);
     const personMap = {};
     records.forEach(r => { const key = `${r.team}-${r.personnel}`; if(!personMap[key]) personMap[key]={n:r.personnel,team:r.team,w:0}; personMap[key].w += (+r.totalUnreasonable||0); });
-    const personRank = Object.values(personMap).sort((a,b)=>b.w-a.w).slice(0,8);
-    document.getElementById('personRankContainer').innerHTML = personRank.map((p,i)=>`<div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" style="background:${rc[i%2]}">${i+1}</span><span class="flex-1">${p.n}<span class="text-xs ml-1 ${p.team==='A班'?'text-teamA':'text-teamB'}">${p.team}</span></span><span class="font-bold">${p.w.toFixed(2)} KG</span></div>`).join('');
-    // 图表
+    const personRank = Object.values(personMap).sort((a,b)=>b.w-a.w).slice(0,5);
+
+    const rankPalette = [
+      {at:0,color:'#35A66A'},
+      {at:0.25,color:'#91B96B'},
+      {at:0.5,color:'#E8BD42'},
+      {at:0.75,color:'#ED8535'},
+      {at:1,color:'#D94343'}
+    ];
+    const buildRankColor = items => {
+      const values = items.map(item=>item.w);
+      const min = values.length ? Math.min(...values) : 0;
+      const max = values.length ? Math.max(...values) : 0;
+      return weight => {
+        if (max <= 0) return '#35A66A';
+        if (max === min) return '#E8BD42';
+        const ratio = (weight-min)/(max-min);
+        for (let i=1;i<rankPalette.length;i++) {
+          if (ratio <= rankPalette[i].at) {
+            const left=rankPalette[i-1], right=rankPalette[i];
+            const t=(ratio-left.at)/(right.at-left.at);
+            const rgb=hex=>[1,3,5].map(pos=>parseInt(hex.slice(pos,pos+2),16));
+            const a=rgb(left.color), b=rgb(right.color);
+            return '#'+a.map((v,index)=>Math.round(v+(b[index]-v)*t).toString(16).padStart(2,'0')).join('');
+          }
+        }
+        return '#D94343';
+      };
+    };
+    const renderRankCards = (items, containerId, personMode) => {
+      const container=document.getElementById(containerId);
+      if(!items.length) {
+        container.innerHTML='<div class="rank-empty">暂无排行数据</div>';
+        return;
+      }
+      const colorFor=buildRankColor(items);
+      container.innerHTML=items.map((item,index)=>{
+        const color=colorFor(item.w);
+        const detail=personMode
+          ? `<span class="rank-card-team ${item.team==='A班'?'text-teamA':'text-teamB'}">${item.team}</span>`
+          : '';
+        return `<div class="rank-data-card">
+          <div class="rank-card-color" style="background:${color}"></div>
+          <div class="rank-card-body">
+            <div class="rank-card-top">
+              <span class="rank-card-name">${item.n}</span>
+              ${detail}
+              <span class="rank-card-place">第${index+1}名</span>
+            </div>
+            <div class="rank-card-weight">${item.w.toFixed(2)} <span class="rank-card-unit">KG</span></div>
+          </div>
+        </div>`;
+      }).join('');
+    };
+    renderRankCards(lineRank,'lineRankContainer',false);
+    renderRankCards(personRank,'personRankContainer',true);
+
+    // 保留原有异常重量分配与班组归属统计口径，仅替换展示方式。
     const totalStats={}, aStats={}, bStats={};
     records.forEach(r=>{ const w=+r.totalUnreasonable||0; const items=r.abnormalSubItems||[]; if(!items.length||w<=0) return; const per=w/items.length; items.forEach(item=>{ const type=item.split('-')[0]; totalStats[type]=(totalStats[type]||0)+per; if(r.team==='A班') aStats[type]=(aStats[type]||0)+per; else bStats[type]=(bStats[type]||0)+per; }); });
     const totalSum=Object.values(totalStats).reduce((a,b)=>a+b,0), aSum=Object.values(aStats).reduce((a,b)=>a+b,0), bSum=Object.values(bStats).reduce((a,b)=>a+b,0);
-    if(chartTotal) chartTotal.destroy(); if(chartA) chartA.destroy(); if(chartB) chartB.destroy();
-    const opts=(sum)=>({responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>`${c.label}: ${c.raw.toFixed(2)} KG (${sum?((c.raw/sum)*100).toFixed(1):0}%)`}}}});
-    chartTotal = new Chart(document.getElementById('abnormalTypeChart'),{type:'doughnut',data:{labels:Object.keys(totalStats),datasets:[{data:Object.values(totalStats),backgroundColor:['#165DFF','#C2410C','#0FC6C2','#F59E0B','#EF4444','#10B981']}]},options:opts(totalSum)});
-    chartA = new Chart(document.getElementById('teamAChart'),{type:'doughnut',data:{labels:Object.keys(aStats),datasets:[{data:Object.values(aStats),backgroundColor:['#165DFF','#0FC6C2','#F59E0B','#EF4444']}]},options:opts(aSum)});
-    chartB = new Chart(document.getElementById('teamBChart'),{type:'doughnut',data:{labels:Object.keys(bStats),datasets:[{data:Object.values(bStats),backgroundColor:['#C2410C','#F59E0B','#EF4444','#10B981']}]},options:opts(bSum)});
-    const legend = (stats,id,total)=>{ const c=document.getElementById(id); const sorted=Object.entries(stats).sort((a,b)=>b[1]-a[1]); if(!sorted.length){c.innerHTML='<div class="text-gray-400">无数据</div>';return;} c.innerHTML=sorted.map(([n,v],i)=>`<div class="flex justify-between text-xs"><div><span class="inline-block w-3 h-3 rounded-sm mr-1" style="background:${['#165DFF','#C2410C','#0FC6C2','#F59E0B','#EF4444','#10B981'][i%6]}"></span>${n}</div><span>${v.toFixed(2)} KG (${total?((v/total)*100).toFixed(1):0}%)</span></div>`).join(''); };
-    legend(totalStats,'totalChartLegend',totalSum); legend(aStats,'teamAChartLegend',aSum); legend(bStats,'teamBChartLegend',bSum);
+
+    const configuredTypes=storage.get(STORAGE.TYPES)||[];
+    const typeNames=[];
+    configuredTypes.forEach(type=>{ if(!typeNames.includes(type.name)) typeNames.push(type.name); });
+    [totalStats,aStats,bStats].forEach(stats=>Object.keys(stats).forEach(name=>{if(!typeNames.includes(name)) typeNames.push(name);}));
+    const typePalette=['#2878D0','#A65B45','#16A6A0','#E5A52E','#D94B4B','#7957B5','#5B9B62','#D16B9A'];
+    const typeColors={};
+    typeNames.forEach((name,index)=>{ typeColors[name]=typePalette[index%typePalette.length]; });
+    const colorForType=name=>{
+      if(typeColors[name]) return typeColors[name];
+      let hash=0; for(let i=0;i<name.length;i++) hash=(hash*31+name.charCodeAt(i))>>>0;
+      return typePalette[hash%typePalette.length];
+    };
+    const statsList=[totalStats,aStats,bStats];
+    const sums=[totalSum,aSum,bSum];
+    const labels=['总异常','A班','B班'];
+    document.getElementById('abnormalDistributionBars').innerHTML=statsList.map((stats,index)=>{
+      const sum=sums[index];
+      const segments=typeNames.map(name=>{
+        const value=stats[name]||0;
+        if(value<=0||sum<=0) return '';
+        const percent=value/sum*100;
+        return `<div class="distribution-segment" title="${name}：${value.toFixed(2)} KG（${percent.toFixed(1)}%）" style="width:${percent}%;background:${colorForType(name)}"></div>`;
+      }).join('');
+      return `<div class="distribution-row">
+        <div class="distribution-label">${labels[index]}</div>
+        ${sum>0?`<div class="distribution-track">${segments}</div>`:'<div class="distribution-empty"></div>'}
+      </div>`;
+    }).join('');
+    document.getElementById('abnormalDistributionLegend').innerHTML=typeNames.length
+      ? typeNames.map(name=>`<span class="distribution-legend-item"><i class="distribution-dot" style="background:${colorForType(name)}"></i>${name}</span>`).join('')
+      : '<span class="text-gray-400 text-xs">暂无异常类型</span>';
+    document.getElementById('abnormalDistributionTable').innerHTML=typeNames.length
+      ? typeNames.map(name=>`<tr>
+          <td><span class="distribution-type"><i class="distribution-dot" style="background:${colorForType(name)}"></i>${name}</span></td>
+          <td class="distribution-value">${(totalStats[name]||0).toFixed(2)}</td>
+          <td class="distribution-value">${(aStats[name]||0).toFixed(2)}</td>
+          <td class="distribution-value">${(bStats[name]||0).toFixed(2)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="text-center text-gray-400">暂无数据</td></tr>';
   }
 
   function renderRecordTable(kw='') {
