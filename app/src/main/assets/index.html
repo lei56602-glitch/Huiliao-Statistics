@@ -23,10 +23,11 @@
       background: linear-gradient(135deg, #165DFF, #C2410C);
       color: white; border: none; border-radius: 48px;
       padding: 12px 24px; font-weight: bold;
-      display: flex; align-items: center; gap: 10px;
+      display: none; align-items: center; gap: 10px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.2); cursor: pointer;
       transition: 0.2s;
     }
+    .float-submit-btn.is-visible { display: flex; }
     .float-submit-btn:active { transform: scale(0.96); }
     @media (max-width: 640px) { .float-submit-btn { padding: 10px 18px; font-size: 14px; } }
     /* 生产线看板：紧凑双列卡片，底部留出悬浮提交按钮空间 */
@@ -157,6 +158,61 @@
       .distribution-legend { margin-left:63px; }
       .distribution-table th, .distribution-table td { padding:7px 3px; font-size:10px; }
     }
+    /* 周对比：数据总览型布局 */
+    .weekly-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .weekly-summary-card {
+      min-width: 0;
+      padding: 12px 8px;
+      border-radius: 13px;
+      text-align: center;
+    }
+    .weekly-summary-label {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .weekly-summary-value {
+      margin-top: 7px;
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: 800;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .weekly-summary-unit { font-size: 10px; font-weight: 600; }
+    .weekly-chart-wrap {
+      position: relative;
+      height: 220px;
+      min-height: 220px;
+    }
+    .weekly-chart-empty {
+      position: absolute;
+      inset: 30px 0 22px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 5px;
+      pointer-events: none;
+      text-align: center;
+      color: #64748b;
+    }
+    .weekly-chart-empty.is-visible { display: flex; }
+    .weekly-chart-empty i { font-size: 27px; color: #93b4f7; }
+    .weekly-chart-empty strong { color: #334155; font-size: 15px; }
+    .weekly-chart-empty span { font-size: 11px; }
+    @media (max-width: 360px) {
+      .weekly-summary-grid { gap: 5px; }
+      .weekly-summary-card { padding: 10px 4px; }
+      .weekly-summary-label { font-size: 11px; }
+      .weekly-summary-value { font-size: 18px; }
+      .weekly-chart-wrap { height: 200px; min-height: 200px; }
+    }
     .abnormal-type-options {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -269,7 +325,6 @@
         </div>
         <div class="md:col-span-2"><h3 class="font-semibold mb-1">异常类型 (多选)</h3><div id="abnormalTypeContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div></div>
       </form>
-      <div class="flex justify-end mt-3"><button id="floatSubmitBtn" class="float-submit-btn !static !z-auto !m-0"><i class="fa fa-check-circle"></i> 提交记录</button></div>
     </div>
   </section>
 
@@ -307,8 +362,51 @@
     </div>
   </section>
 
-  <!-- 周对比（新增） -->
-  <section id="weekly" class="tab-content hidden"><div class="glass rounded-xl p-3 space-y-3"><div class="flex justify-between items-center"><h2 class="text-xl font-bold"><i class="fa fa-calendar-week text-primary"></i> 每周数据统计对比</h2><span id="weeklyMonthBadge" class="bg-gray-200 px-3 py-1 rounded-full text-sm font-mono"></span></div><div class="bg-amber-50 p-2 rounded text-sm">📌 自然周（周一~周日）聚合，展示A班/B班合计重量，底部汇总当月总计。</div><div class="h-72"><canvas id="weeklyChart"></canvas></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-100"><tr><th class="p-2 text-left">周区间</th><th class="p-2 text-right">A班(KG)</th><th class="p-2 text-right">B班(KG)</th><th class="p-2 text-right">合计(KG)</th><th class="p-2 text-right">条数</th></tr></thead><tbody id="weeklyTableBody"></tbody><tfoot class="bg-green-100 font-bold"><tr><td class="p-2 text-right">本月总计</td><td id="monthTotalA" class="p-2 text-right text-teamA">0.00</td><td id="monthTotalB" class="p-2 text-right text-teamB">0.00</td><td id="monthTotalSum" class="p-2 text-right text-danger">0.00</td><td id="monthTotalCount" class="p-2 text-right">0</td></tr></tfoot></table></div></div></section>
+  <!-- 周对比：数据总览型布局 -->
+  <section id="weekly" class="tab-content hidden">
+    <div class="glass rounded-xl p-3 space-y-3">
+      <div class="flex justify-between items-center gap-2">
+        <h2 class="text-xl font-bold"><i class="fa fa-calendar-week text-primary"></i> 每周数据统计对比</h2>
+        <span id="weeklyMonthBadge" class="bg-gray-200 px-3 py-1 rounded-full text-sm font-mono"></span>
+      </div>
+      <div class="bg-amber-50 p-2 rounded text-sm">📌 自然周（周一~周日）聚合，展示A班/B班合计重量，底部汇总当月总计。</div>
+      <div class="weekly-summary-grid">
+        <div class="weekly-summary-card" style="background:rgba(22,93,255,.10);color:#165DFF">
+          <div class="weekly-summary-label">A班合计</div>
+          <div class="weekly-summary-value"><span id="weeklySummaryA">0.00</span> <span class="weekly-summary-unit">KG</span></div>
+        </div>
+        <div class="weekly-summary-card" style="background:rgba(194,65,12,.10);color:#C2410C">
+          <div class="weekly-summary-label">B班合计</div>
+          <div class="weekly-summary-value"><span id="weeklySummaryB">0.00</span> <span class="weekly-summary-unit">KG</span></div>
+        </div>
+        <div class="weekly-summary-card" style="background:rgba(16,185,129,.11);color:#059669">
+          <div class="weekly-summary-label">本月总计</div>
+          <div class="weekly-summary-value"><span id="weeklySummaryTotal">0.00</span> <span class="weekly-summary-unit">KG</span></div>
+        </div>
+      </div>
+      <div class="pt-1">
+        <h3 class="font-bold text-sm mb-1">每周重量趋势</h3>
+        <div class="weekly-chart-wrap">
+          <canvas id="weeklyChart"></canvas>
+          <div id="weeklyChartEmpty" class="weekly-chart-empty">
+            <i class="fa fa-bar-chart"></i>
+            <strong>暂无周数据</strong>
+            <span>本月各周数据录入后，将在这里显示趋势</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 class="font-bold text-sm mb-2">每周数据明细</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-100"><tr><th class="p-2 text-left">周区间</th><th class="p-2 text-right">A班(KG)</th><th class="p-2 text-right">B班(KG)</th><th class="p-2 text-right">合计(KG)</th><th class="p-2 text-right">条数</th></tr></thead>
+            <tbody id="weeklyTableBody"></tbody>
+            <tfoot class="bg-green-100 font-bold"><tr><td class="p-2 text-right">本月总计</td><td id="monthTotalA" class="p-2 text-right text-teamA">0.00</td><td id="monthTotalB" class="p-2 text-right text-teamB">0.00</td><td id="monthTotalSum" class="p-2 text-right text-danger">0.00</td><td id="monthTotalCount" class="p-2 text-right">0</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- 记录 -->
   <section id="record" class="tab-content hidden"><div class="glass rounded-xl p-3"><div class="flex justify-between items-center flex-wrap gap-2 mb-3"><h2 class="text-lg font-bold">详细记录 <span id="recordMonthHint" class="text-sm font-normal"></span></h2><div class="flex gap-1"><input type="text" id="searchRecord" placeholder="搜索" class="input-liquid w-32 rounded px-3 py-1"><button id="refreshRecordBtn" class="px-3 py-1 bg-primary/10 rounded"><i class="fa fa-refresh"></i></button><button id="exportBtn" class="px-3 py-1 bg-success/10 text-success rounded"><i class="fa fa-download"></i> 导出链接</button><button id="backupBtn" class="px-3 py-1 bg-blue-50 text-primary rounded"><i class="fa fa-database"></i> 数据备份</button></div></div><div class="overflow-x-auto"><table class="w-full text-sm min-w-[800px]"><thead><tr><th>日期</th><th>线</th><th>班</th><th>人</th><th>型号</th><th>不合理(KG)</th><th>类型</th><th></th></tr></thead><tbody id="recordTableBody"></tbody></table></div><div id="emptyRecordTip" class="py-8 text-center text-gray-400 hidden"><i class="fa fa-inbox"></i> 暂无记录</div></div></section>
@@ -316,6 +414,9 @@
   <!-- 管理 -->
   <section id="manage" class="tab-content hidden"><div class="grid lg:grid-cols-3 gap-3"><div class="glass rounded-xl p-3 lg:col-span-2"><div class="flex justify-between"><h2 class="font-bold">异常类型</h2><button id="addTypeBtn" class="bg-primary text-white px-3 py-1 rounded">+ 大类</button></div><div id="typeManageContainer" class="space-y-3 mt-2"></div></div><div class="space-y-3"><div class="glass p-3"><h2 class="font-bold">生产线</h2><div id="lineManageContainer" class="space-y-2 my-2"></div><div class="flex gap-1"><input id="newLineInput" placeholder="名称" class="input-liquid flex-1 rounded px-3 py-1"><button id="confirmAddLineBtn" class="bg-primary text-white px-3 py-1 rounded">+</button></div></div><div class="glass p-3"><h2 class="font-bold">人员</h2><div class="flex border rounded overflow-hidden mb-2"><button id="manageTeamATab" class="flex-1 py-1 bg-teamA/10 text-teamA">A班</button><button id="manageTeamBTab" class="flex-1 py-1 text-gray-500">B班</button></div><div id="personManageContainer" class="space-y-2"></div><div class="flex gap-1 mt-2"><input id="newPersonInput" placeholder="姓名" class="input-liquid flex-1 rounded px-3 py-1"><button id="confirmAddPersonBtn" class="bg-teamA text-white px-3 py-1 rounded">+</button></div></div></div></div></section>
 </main>
+
+<!-- 仅在“记录”页面显示的悬浮提交按钮 -->
+<button id="floatSubmitBtn" class="float-submit-btn" type="button"><i class="fa fa-check-circle"></i> 提交记录</button>
 
 <script>
 (function(){
@@ -396,10 +497,15 @@
     document.getElementById('monthTotalB').innerText = monthBTotal.toFixed(2);
     document.getElementById('monthTotalSum').innerText = (monthATotal+monthBTotal).toFixed(2);
     document.getElementById('monthTotalCount').innerText = weeks.reduce((s,w)=>s+w.count,0);
+    document.getElementById('weeklySummaryA').innerText = monthATotal.toFixed(2);
+    document.getElementById('weeklySummaryB').innerText = monthBTotal.toFixed(2);
+    document.getElementById('weeklySummaryTotal').innerText = (monthATotal+monthBTotal).toFixed(2);
+    const hasWeeklyData = weeks.some(w => w.a > 0 || w.b > 0);
+    document.getElementById('weeklyChartEmpty').classList.toggle('is-visible', !hasWeeklyData);
     document.getElementById('weeklyTableBody').innerHTML = weeks.map(w => `<tr><td class="p-2">${w.label}</td><td class="p-2 text-right text-teamA">${w.a.toFixed(2)}</td><td class="p-2 text-right text-teamB">${w.b.toFixed(2)}</td><td class="p-2 text-right font-bold">${(w.a+w.b).toFixed(2)}</td><td class="p-2 text-right">${w.count}</td></tr>`).join('');
     if (weeklyChart) weeklyChart.destroy();
     const ctx = document.getElementById('weeklyChart').getContext('2d');
-    weeklyChart = new Chart(ctx, { type:'bar', data: { labels, datasets: [{ label:'A班 (KG)', data:aData, backgroundColor:'#165DFF' },{ label:'B班 (KG)', data:bData, backgroundColor:'#C2410C' }] }, options: { responsive:true, maintainAspectRatio:true, scales: { y: { beginAtZero: true, title: { display: true, text: '重量 (KG)' } } } } });
+    weeklyChart = new Chart(ctx, { type:'bar', data: { labels, datasets: [{ label:'A班 (KG)', data:aData, backgroundColor:'#165DFF' },{ label:'B班 (KG)', data:bData, backgroundColor:'#C2410C' }] }, options: { responsive:true, maintainAspectRatio:false, scales: { y: { beginAtZero: true, title: { display: true, text: '重量 (KG)' } } } } });
   }
 
   // 看板、排行、图表（基于月份）
@@ -701,7 +807,7 @@
 
   function bindEvents() {
     // 标签页切换
-    document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',function(){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('tab-active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden')); this.classList.add('tab-active'); document.getElementById(this.dataset.tab).classList.remove('hidden'); if(this.dataset.tab==='weekly') renderWeekly(); if(this.dataset.tab==='dashboard') renderDashboard(); if(this.dataset.tab==='rank') renderRankAndCharts(); if(this.dataset.tab==='record') renderRecordTable(); }));
+    document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',function(){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('tab-active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden')); this.classList.add('tab-active'); document.getElementById(this.dataset.tab).classList.remove('hidden'); document.getElementById('floatSubmitBtn').classList.toggle('is-visible', this.dataset.tab==='record'); if(this.dataset.tab==='weekly') renderWeekly(); if(this.dataset.tab==='dashboard') renderDashboard(); if(this.dataset.tab==='rank') renderRankAndCharts(); if(this.dataset.tab==='record') renderRecordTable(); }));
     // 表单计算
     const calcTotal = () => { const prod=+document.getElementById('productWeight').value||0; const ded=Array.from(document.querySelectorAll('.deduction-input')).reduce((s,i)=>s+(+i.value||0),0); const total=Math.max(0,prod-ded).toFixed(2); document.getElementById('totalUnreasonable').textContent=total; document.getElementById('totalUnreasonableInput').value=total; };
     document.getElementById('productWeight').addEventListener('input',calcTotal);
@@ -744,6 +850,7 @@
     refreshAll();
     bindEvents();
     setupFloatSubmit();
+    document.getElementById('floatSubmitBtn').classList.remove('is-visible');
     // 默认打开录入页
     document.querySelector('.tab-btn[data-tab="form"]').click();
   };
