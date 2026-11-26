@@ -867,7 +867,7 @@
     records.forEach(record=>{
       if(!Array.isArray(record.abnormalSubItems)) return;
       record.abnormalSubItems=record.abnormalSubItems.map(value=>{
-        if(typeof value==='string'&&value.startsWith(oldPrefix)){changed=true;return newPrefix+value.slice(oldPrefix.length);}
+        if(typeof value==='string'&&(oldPrefix.endsWith('-')?value.startsWith(oldPrefix):value===oldPrefix)){changed=true;return newPrefix+value.slice(oldPrefix.length);}
         return value;
       });
     });
