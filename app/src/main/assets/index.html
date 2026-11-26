@@ -316,9 +316,9 @@
         <div class="space-y-2">
           <h3 class="font-semibold">合理扣减 (KG)</h3>
           <div class="grid grid-cols-2 gap-2">
-            <div><label>调机扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0"></div>
+            <div><label>调机扣减（自动）</label><input type="number" id="setupDeduction" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0" readonly></div>
             <div><label>洗机扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0"></div>
-            <div><label>百丝边料扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0"></div>
+            <div><label>百丝边料扣减（自动）</label><input type="number" id="edgeDeduction" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0" readonly></div>
             <div><label>自割料扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0"></div>
           </div>
           <div class="glass-dark p-3 rounded"><div class="flex justify-between"><span class="font-semibold">最终不合理数量 (KG)</span><span id="totalUnreasonable" class="text-2xl font-bold text-danger">0.00</span></div><input type="hidden" id="totalUnreasonableInput" value="0"></div>
@@ -825,13 +825,26 @@
   function bindEvents() {
     // 标签页切换
     document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',function(){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('tab-active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden')); this.classList.add('tab-active'); document.getElementById(this.dataset.tab).classList.remove('hidden'); document.getElementById('floatSubmitBtn').classList.toggle('is-visible', this.dataset.tab==='form'); if(this.dataset.tab==='weekly') renderWeekly(); if(this.dataset.tab==='dashboard') renderDashboard(); if(this.dataset.tab==='rank') renderRankAndCharts(); if(this.dataset.tab==='record') renderRecordTable(); }));
+    // 型号自动扣减：BD 系列优先；其他型号按颜色编号及颜色标识识别
+    const applyModelDeductions = () => {
+      const model = document.getElementById('productModel').value.trim().toUpperCase();
+      const setup = document.getElementById('setupDeduction');
+      const edge = document.getElementById('edgeDeduction');
+      if (!model) { setup.value = ''; edge.value = ''; calcTotal(); return; }
+      const isBD = model.startsWith('BD');
+      const isColorMaterial = /\\d+[黑棕黄红蓝绿白灰紫粉橙]/.test(model);
+      setup.value = isBD ? '200' : (isColorMaterial ? '100' : '200');
+      edge.value = isBD ? '300' : '0';
+      calcTotal();
+    };
     // 表单计算
     const calcTotal = () => { const prod=+document.getElementById('productWeight').value||0; const ded=Array.from(document.querySelectorAll('.deduction-input')).reduce((s,i)=>s+(+i.value||0),0); const total=Math.max(0,prod-ded).toFixed(2); document.getElementById('totalUnreasonable').textContent=total; document.getElementById('totalUnreasonableInput').value=total; };
+    document.getElementById('productModel').addEventListener('input',applyModelDeductions);
     document.getElementById('productWeight').addEventListener('input',calcTotal);
     document.querySelectorAll('.deduction-input').forEach(i=>i.addEventListener('input',calcTotal));
     document.getElementById('team').addEventListener('change',e=>renderPersonSelect(e.target.value));
     // 表单提交
-    document.getElementById('abnormalForm').addEventListener('submit',e=>{ e.preventDefault(); const date=document.getElementById('recordDate').value, line=document.getElementById('productionLine').value, team=document.getElementById('team').value, person=document.getElementById('personnel').value; if(!date||!line||!team||!person) return alert('请填写完整信息'); const subItems=Array.from(document.querySelectorAll('input[name="abnormalSubItem"]:checked')).map(cb=>cb.value); if(!subItems.length) return alert('至少选一个异常类型'); const total=document.getElementById('totalUnreasonableInput').value; if(+total<=0) return alert('不合理总量必须>0'); const record={id:genId(),date,productionLine:line,team,personnel:person,productModel:document.getElementById('productModel').value,productWeight:document.getElementById('productWeight').value,totalUnreasonable:total,abnormalSubItems:subItems,createTime:new Date().toISOString()}; const records=storage.get(STORAGE.RECORDS)||[]; records.push(record); storage.set(STORAGE.RECORDS,records); e.target.reset(); document.getElementById('recordDate').value=getToday(); document.querySelectorAll('.deduction-input').forEach(i=>i.value=''); calcTotal(); renderPersonSelect(''); alert('提交成功'); refreshAll(); });
+    document.getElementById('abnormalForm').addEventListener('submit',e=>{ e.preventDefault(); const date=document.getElementById('recordDate').value, line=document.getElementById('productionLine').value, team=document.getElementById('team').value, person=document.getElementById('personnel').value; if(!date||!line||!team||!person) return alert('请填写完整信息'); const subItems=Array.from(document.querySelectorAll('input[name="abnormalSubItem"]:checked')).map(cb=>cb.value); if(!subItems.length) return alert('至少选一个异常类型'); const total=document.getElementById('totalUnreasonableInput').value; if(+total<=0) return alert('不合理总量必须>0'); const record={id:genId(),date,productionLine:line,team,personnel:person,productModel:document.getElementById('productModel').value,productWeight:document.getElementById('productWeight').value,deductionDetails:{setup:+document.getElementById('setupDeduction').value||0,wash:+document.querySelectorAll('.deduction-input')[1].value||0,edge:+document.getElementById('edgeDeduction').value||0,selfCut:+document.querySelectorAll('.deduction-input')[3].value||0},materialCategory:document.getElementById('productModel').value.trim().toUpperCase().startsWith('BD')?'BD特殊系列':(/\\d+[黑棕黄红蓝绿白灰紫粉橙]/.test(document.getElementById('productModel').value)?'颜色料':'透明料/本色料'),totalUnreasonable:total,abnormalSubItems:subItems,createTime:new Date().toISOString()}; const records=storage.get(STORAGE.RECORDS)||[]; records.push(record); storage.set(STORAGE.RECORDS,records); e.target.reset(); document.getElementById('recordDate').value=getToday(); document.querySelectorAll('.deduction-input').forEach(i=>i.value=''); applyModelDeductions(); calcTotal(); renderPersonSelect(''); alert('提交成功'); refreshAll(); });
     // 管理事件
     document.getElementById('addLineBtn').addEventListener('click',()=>{ const name=prompt('生产线名称'); if(name && !storage.get(STORAGE.LINES).includes(name)){ storage.set(STORAGE.LINES,[...storage.get(STORAGE.LINES),name]); renderLineSelect(); renderLineManage(); refreshAll(); } });
     document.getElementById('confirmAddLineBtn').addEventListener('click',()=>{ const name=document.getElementById('newLineInput').value.trim(); if(name && !storage.get(STORAGE.LINES).includes(name)){ storage.set(STORAGE.LINES,[...storage.get(STORAGE.LINES),name]); document.getElementById('newLineInput').value=''; renderLineSelect(); renderLineManage(); refreshAll(); } });
