@@ -248,6 +248,64 @@
       min-width: 0;
       flex: 1 1 auto;
     }
+
+    /* 管理中心：桌面侧栏 + 移动端横向导航，保持现有数据结构 */
+    .manage-layout { display:grid; grid-template-columns:230px minmax(0,1fr); gap:14px; align-items:start; }
+    .manage-sidebar { position:sticky; top:112px; padding:14px; border:1px solid rgba(148,163,184,.2); border-radius:18px; background:rgba(255,255,255,.78); box-shadow:0 8px 24px rgba(30,64,175,.06); }
+    .manage-sidebar-title { display:flex; align-items:center; gap:10px; padding:5px 7px 15px; color:#1e3a8a; font-size:17px; font-weight:800; }
+    .manage-nav { display:grid; gap:8px; }
+    .manage-nav-item { display:flex; align-items:center; gap:11px; width:100%; min-height:52px; padding:11px 13px; border:1px solid transparent; border-radius:12px; color:#475569; text-align:left; font-weight:700; background:rgba(248,250,252,.9); transition:.18s; }
+    .manage-nav-item i { width:20px; text-align:center; font-size:17px; }
+    .manage-nav-item.active { color:#fff; background:linear-gradient(135deg,#1674f8,#165DFF); box-shadow:0 7px 16px rgba(22,93,255,.2); }
+    .manage-sidebar-note { margin:14px 4px 2px; padding:10px; border-radius:11px; color:#64748b; background:#f1f6ff; font-size:11px; line-height:1.6; }
+    .manage-main { min-width:0; display:grid; gap:14px; }
+    .manage-panel { min-width:0; padding:16px; border:1px solid rgba(148,163,184,.2); border-radius:18px; background:rgba(255,255,255,.86); box-shadow:0 8px 24px rgba(30,64,175,.055); }
+    .manage-panel[hidden] { display:none !important; }
+    .manage-panel-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+    .manage-panel-title { display:flex; align-items:center; gap:10px; min-width:0; color:#172554; font-size:18px; font-weight:800; }
+    .manage-panel-title i { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:11px; color:#fff; background:linear-gradient(135deg,#2784ff,#165DFF); }
+    .manage-primary-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:40px; padding:9px 14px; border:0; border-radius:11px; color:#fff; background:linear-gradient(135deg,#2784ff,#165DFF); font-size:13px; font-weight:750; white-space:nowrap; box-shadow:0 4px 12px rgba(22,93,255,.15); }
+    .manage-type-list { display:grid; gap:10px; }
+    .manage-type-card { overflow:hidden; border:1px solid #e4edfc; border-radius:14px; background:linear-gradient(180deg,#fff,#f8fbff); }
+    .manage-type-head { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; min-height:58px; padding:10px 12px; background:linear-gradient(90deg,#edf5ff,#f8fbff); }
+    .manage-type-name { display:flex; align-items:center; gap:10px; min-width:0; color:#1e293b; font-size:15px; font-weight:800; overflow-wrap:anywhere; }
+    .manage-type-icon { display:grid; place-items:center; width:34px; height:34px; flex:0 0 34px; border-radius:10px; color:#fff; background:#2478ef; }
+    .manage-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:nowrap; }
+    .manage-action-btn { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-width:62px; min-height:34px; padding:6px 9px; border:1px solid #cfe0ff; border-radius:9px; color:#1766dc; background:#f5f9ff; font-size:12px; font-weight:700; white-space:nowrap; }
+    .manage-action-btn.danger { color:#dc3545; border-color:#ffd2d8; background:#fff7f8; }
+    .manage-child-list { display:grid; gap:0; padding:4px 12px 10px 56px; }
+    .manage-child-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; min-height:46px; padding:6px 2px; border-bottom:1px solid #edf2f8; }
+    .manage-child-row:last-child { border-bottom:0; }
+    .manage-child-name { min-width:0; color:#334155; font-size:13px; line-height:1.45; text-align:left; overflow-wrap:anywhere; }
+    .manage-empty { padding:20px 10px; color:#94a3b8; text-align:center; font-size:13px; }
+    .manage-form-row { display:flex; align-items:center; gap:9px; margin-top:13px; }
+    .manage-form-row input { min-width:0; min-height:42px; padding:9px 12px; border:1px solid #d9e5f5; border-radius:10px; background:#fff; flex:1; }
+    .manage-person-row,.manage-line-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; min-height:46px; padding:8px 11px; border:1px solid #e8eef7; border-radius:10px; background:#fff; }
+    .manage-row-list { display:grid; gap:8px; }
+    .manage-team-tabs { display:flex; gap:7px; padding:4px; margin-bottom:12px; border-radius:11px; background:#f1f5fb; }
+    .manage-team-tabs button { flex:1; min-height:38px; border-radius:8px; color:#64748b; font-weight:700; }
+    .manage-team-tabs button.active { color:#165DFF; background:#fff; box-shadow:0 1px 5px rgba(15,23,42,.08); }
+    @media (max-width:760px) {
+      .manage-layout { grid-template-columns:minmax(0,1fr); gap:10px; }
+      .manage-sidebar { position:static; padding:9px; border-radius:14px; }
+      .manage-sidebar-title { display:none; }
+      .manage-nav { display:flex; gap:7px; overflow-x:auto; }
+      .manage-nav-item { flex:1 0 auto; width:auto; min-height:42px; justify-content:center; padding:8px 11px; font-size:12px; }
+      .manage-sidebar-note { display:none; }
+      .manage-panel { padding:12px; border-radius:14px; }
+      .manage-panel-head { margin-bottom:11px; }
+      .manage-panel-title { font-size:16px; }
+      .manage-type-head { grid-template-columns:minmax(0,1fr) auto; gap:6px; padding:9px; }
+      .manage-actions { gap:4px; }
+      .manage-action-btn { min-width:34px; padding:6px 8px; font-size:11px; }
+      .manage-child-list { padding-left:43px; padding-right:8px; }
+      .manage-child-row { gap:6px; }
+    }
+    @media (max-width:360px) {
+      .manage-action-btn { min-width:30px; padding:6px; }
+      .manage-action-btn .action-label { display:none; }
+      .manage-type-name { font-size:14px; }
+    }
   </style>
   <script>
     tailwind.config = { theme: { extend: { colors: { primary: '#165DFF', secondary: '#C2410C', success: '#10B981' } } } }
@@ -411,8 +469,53 @@
   <!-- 记录 -->
   <section id="record" class="tab-content hidden"><div class="glass rounded-xl p-3"><div class="flex justify-between items-center flex-wrap gap-2 mb-3"><h2 class="text-lg font-bold">详细记录 <span id="recordMonthHint" class="text-sm font-normal"></span></h2><div class="flex gap-1"><input type="text" id="searchRecord" placeholder="搜索" class="input-liquid w-32 rounded px-3 py-1"><button id="refreshRecordBtn" class="px-3 py-1 bg-primary/10 rounded"><i class="fa fa-refresh"></i></button><button id="exportBtn" class="px-3 py-1 bg-success/10 text-success rounded"><i class="fa fa-download"></i> 导出链接</button><button id="backupBtn" class="px-3 py-1 bg-blue-50 text-primary rounded"><i class="fa fa-database"></i> 数据备份</button><button id="restoreBtn" class="px-3 py-1 bg-amber-50 text-amber-700 rounded"><i class="fa fa-undo"></i> 恢复数据</button></div></div><div class="overflow-x-auto"><table class="w-full text-sm min-w-[800px]"><thead><tr><th>日期</th><th>线</th><th>班</th><th>人</th><th>型号</th><th>不合理(KG)</th><th>类型</th><th></th></tr></thead><tbody id="recordTableBody"></tbody></table></div><div id="emptyRecordTip" class="py-8 text-center text-gray-400 hidden"><i class="fa fa-inbox"></i> 暂无记录</div></div></section>
 
-  <!-- 管理 -->
-  <section id="manage" class="tab-content hidden"><div class="grid lg:grid-cols-3 gap-3"><div class="glass rounded-xl p-3 lg:col-span-2"><div class="flex justify-between"><h2 class="font-bold">异常类型</h2><button id="addTypeBtn" class="bg-primary text-white px-3 py-1 rounded">+ 大类</button></div><div id="typeManageContainer" class="space-y-3 mt-2"></div></div><div class="space-y-3"><div class="glass p-3"><h2 class="font-bold">生产线</h2><div id="lineManageContainer" class="space-y-2 my-2"></div><div class="flex gap-1"><input id="newLineInput" placeholder="名称" class="input-liquid flex-1 rounded px-3 py-1"><button id="confirmAddLineBtn" class="bg-primary text-white px-3 py-1 rounded">+</button></div></div><div class="glass p-3"><h2 class="font-bold">人员</h2><div class="flex border rounded overflow-hidden mb-2"><button id="manageTeamATab" class="flex-1 py-1 bg-teamA/10 text-teamA">A班</button><button id="manageTeamBTab" class="flex-1 py-1 text-gray-500">B班</button></div><div id="personManageContainer" class="space-y-2"></div><div class="flex gap-1 mt-2"><input id="newPersonInput" placeholder="姓名" class="input-liquid flex-1 rounded px-3 py-1"><button id="confirmAddPersonBtn" class="bg-teamA text-white px-3 py-1 rounded">+</button></div></div></div></div></section>
+  <!-- 管理中心：异常类型、人员、生产线 -->
+  <section id="manage" class="tab-content hidden">
+    <div class="manage-layout">
+      <aside class="manage-sidebar">
+        <div class="manage-sidebar-title"><i class="fa fa-sliders text-primary"></i> 管理中心</div>
+        <nav class="manage-nav" aria-label="管理模块">
+          <button type="button" class="manage-nav-item active" data-manage-target="types"><i class="fa fa-sitemap"></i><span>异常类型</span></button>
+          <button type="button" class="manage-nav-item" data-manage-target="people"><i class="fa fa-users"></i><span>人员管理</span></button>
+          <button type="button" class="manage-nav-item" data-manage-target="lines"><i class="fa fa-industry"></i><span>生产线管理</span></button>
+        </nav>
+        <div class="manage-sidebar-note">在这里维护系统基础资料。修改类别名称时，会同步更新历史记录中的对应类别名称。</div>
+      </aside>
+      <div class="manage-main">
+        <section class="manage-panel" data-manage-panel="types">
+          <div class="manage-panel-head">
+            <h2 class="manage-panel-title"><i class="fa fa-sitemap"></i><span>异常类型管理</span></h2>
+            <button id="addTypeBtn" type="button" class="manage-primary-btn"><i class="fa fa-plus"></i> 新增大类</button>
+          </div>
+          <div id="typeManageContainer" class="manage-type-list"></div>
+        </section>
+        <section class="manage-panel" data-manage-panel="people" hidden>
+          <div class="manage-panel-head">
+            <h2 class="manage-panel-title"><i class="fa fa-users"></i><span>人员管理</span></h2>
+          </div>
+          <div class="manage-team-tabs">
+            <button id="manageTeamATab" type="button" class="active">A班</button>
+            <button id="manageTeamBTab" type="button">B班</button>
+          </div>
+          <div id="personManageContainer" class="manage-row-list"></div>
+          <div class="manage-form-row">
+            <input id="newPersonInput" placeholder="请输入人员姓名" aria-label="人员姓名">
+            <button id="confirmAddPersonBtn" type="button" class="manage-primary-btn"><i class="fa fa-user-plus"></i> 新增人员</button>
+          </div>
+        </section>
+        <section class="manage-panel" data-manage-panel="lines" hidden>
+          <div class="manage-panel-head">
+            <h2 class="manage-panel-title"><i class="fa fa-industry"></i><span>生产线管理</span></h2>
+          </div>
+          <div id="lineManageContainer" class="manage-row-list"></div>
+          <div class="manage-form-row">
+            <input id="newLineInput" placeholder="请输入生产线名称" aria-label="生产线名称">
+            <button id="confirmAddLineBtn" type="button" class="manage-primary-btn"><i class="fa fa-plus"></i> 新增生产线</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
 </main>
 
 <!-- 仅在“记录”页面显示的悬浮提交按钮 -->
@@ -724,9 +827,52 @@
       </div>
     `).join('');
   }
-  function renderLineManage() { const lines=storage.get(STORAGE.LINES)||[]; document.getElementById('lineManageContainer').innerHTML=lines.map(l=>`<div class="flex justify-between items-center p-2 bg-white/50 rounded"><span>${l}</span><button class="delete-line text-danger" data-line="${l}"><i class="fa fa-trash"></i></button></div>`).join(''); }
-  function renderPersonManage() { const data=storage.get(STORAGE.PERSONS)||{}; const persons=data[currentManageTeam]||[]; const cont=document.getElementById('personManageContainer'); cont.innerHTML=persons.length?persons.map(p=>`<div class="flex justify-between bg-white/50 p-2 rounded"><span>${p}</span><button class="delete-person text-danger" data-person="${p}" data-team="${currentManageTeam}"><i class="fa fa-trash"></i></button></div>`).join(''):'<div class="text-gray-400 text-center">暂无</div>'; document.getElementById('confirmAddPersonBtn').className=`px-3 py-1 bg-${currentManageTeam==='A班'?'teamA':'teamB'} text-white rounded`; }
-  function renderTypeManage() { const types=storage.get(STORAGE.TYPES)||[]; document.getElementById('typeManageContainer').innerHTML=types.map((t,i)=>`<div class="glass p-2 rounded"><div class="flex justify-between"><span class="font-bold">${i+1}. ${t.name}</span><div><button class="add-subitem text-success mr-2" data-id="${t.id}"><i class="fa fa-plus"></i> 子项</button><button class="delete-type text-danger" data-id="${t.id}"><i class="fa fa-trash"></i></button></div></div><div class="flex flex-wrap gap-1 mt-1">${t.subItems.map((item,idx)=>`<span class="bg-white/70 rounded-full px-2 py-0.5 text-xs inline-flex items-center gap-1">${item}<button class="delete-subitem text-danger" data-id="${t.id}" data-idx="${idx}"><i class="fa fa-times-circle"></i></button></span>`).join('')}</div></div>`).join(''); }
+  function renderLineManage() { const lines=storage.get(STORAGE.LINES)||[]; document.getElementById('lineManageContainer').innerHTML=lines.length?lines.map(l=>`<div class="manage-line-row"><span class="manage-child-name">${l}</span><button type="button" class="manage-action-btn danger delete-line" data-line="${l}"><i class="fa fa-trash"></i><span class="action-label">删除</span></button></div>`).join(''):'<div class="manage-empty">暂无生产线</div>'; }
+  function renderPersonManage() {
+    const data=storage.get(STORAGE.PERSONS)||{};
+    const persons=data[currentManageTeam]||[];
+    const cont=document.getElementById('personManageContainer');
+    cont.innerHTML=persons.length?persons.map(p=>`<div class="manage-person-row"><span class="manage-child-name">${p}</span><button type="button" class="manage-action-btn danger delete-person" data-person="${p}" data-team="${currentManageTeam}" aria-label="删除人员"><i class="fa fa-trash"></i><span class="action-label">删除</span></button></div>`).join(''):'<div class="manage-empty">暂无人员，请在下方输入姓名后点击“新增人员”</div>';
+    const a=document.getElementById('manageTeamATab'), b=document.getElementById('manageTeamBTab');
+    a.classList.toggle('active',currentManageTeam==='A班'); b.classList.toggle('active',currentManageTeam==='B班');
+  }
+  function renderTypeManage() {
+    const types=storage.get(STORAGE.TYPES)||[];
+    const icons=['fa-cogs','fa-cube','fa-users','fa-wrench','fa-leaf'];
+    document.getElementById('typeManageContainer').innerHTML=types.length?types.map((t,i)=>`
+      <article class="manage-type-card">
+        <div class="manage-type-head">
+          <div class="manage-type-name"><span class="manage-type-icon"><i class="fa ${icons[i%icons.length]}"></i></span><span>${i+1}. ${t.name}</span></div>
+          <div class="manage-actions">
+            <button type="button" class="manage-action-btn add-subitem" data-id="${t.id}"><i class="fa fa-plus"></i><span class="action-label">新增子项目</span></button>
+            <button type="button" class="manage-action-btn rename-type" data-id="${t.id}"><i class="fa fa-pencil"></i><span class="action-label">重命名</span></button>
+            <button type="button" class="manage-action-btn danger delete-type" data-id="${t.id}" aria-label="删除大类"><i class="fa fa-trash"></i><span class="action-label">删除</span></button>
+          </div>
+        </div>
+        <div class="manage-child-list">
+          ${t.subItems.length?t.subItems.map((item,idx)=>`
+            <div class="manage-child-row">
+              <span class="manage-child-name">${item}</span>
+              <div class="manage-actions">
+                <button type="button" class="manage-action-btn rename-subitem" data-id="${t.id}" data-idx="${idx}"><i class="fa fa-pencil"></i><span class="action-label">编辑</span></button>
+                <button type="button" class="manage-action-btn danger delete-subitem" data-id="${t.id}" data-idx="${idx}" aria-label="删除子项目"><i class="fa fa-trash"></i><span class="action-label">删除</span></button>
+              </div>
+            </div>`).join(''):'<div class="manage-empty">暂无子项目，点击“新增子项目”添加</div>'}
+        </div>
+      </article>`).join(''):'<div class="manage-empty">暂无异常大类，点击右上角新增</div>';
+  }
+  function replaceHistoricalTypePrefix(oldPrefix,newPrefix) {
+    const records=storage.get(STORAGE.RECORDS)||[];
+    let changed=false;
+    records.forEach(record=>{
+      if(!Array.isArray(record.abnormalSubItems)) return;
+      record.abnormalSubItems=record.abnormalSubItems.map(value=>{
+        if(typeof value==='string'&&value.startsWith(oldPrefix)){changed=true;return newPrefix+value.slice(oldPrefix.length);}
+        return value;
+      });
+    });
+    if(changed) storage.set(STORAGE.RECORDS,records);
+  }
 
   // 导出
   function getExportData() { let records = getRecordsByMonth(currentViewMonth); const kw = document.getElementById('searchRecord').value.trim(); if(kw) records = records.filter(r=>JSON.stringify(r).includes(kw)); if(!records.length) return null; const sheet=[['日期','生产线','班组','人员','产品型号','产量(KG)','不合理(KG)','异常类型','提交时间']]; records.forEach(r=>{ sheet.push([r.date,r.productionLine,r.team,r.personnel,r.productModel||'-',(+r.productWeight||0).toFixed(2),(+r.totalUnreasonable||0).toFixed(2),(r.abnormalSubItems||[]).map(i=>i.split('-')[1]).join('、'),new Date(r.createTime).toLocaleString()]); }); return sheet; }
@@ -847,15 +993,72 @@
     document.getElementById('abnormalForm').addEventListener('submit',e=>{ e.preventDefault(); const date=document.getElementById('recordDate').value, line=document.getElementById('productionLine').value, team=document.getElementById('team').value, person=document.getElementById('personnel').value; if(!date||!line||!team||!person) return alert('请填写完整信息'); const subItems=Array.from(document.querySelectorAll('input[name="abnormalSubItem"]:checked')).map(cb=>cb.value); if(!subItems.length) return alert('至少选一个异常类型'); const total=document.getElementById('totalUnreasonableInput').value; if(+total<=0) return alert('不合理总量必须>0'); const record={id:genId(),date,productionLine:line,team,personnel:person,productModel:document.getElementById('productModel').value,productWeight:document.getElementById('productWeight').value,deductionDetails:{setup:+document.getElementById('setupDeduction').value||0,wash:+document.querySelectorAll('.deduction-input')[1].value||0,edge:+document.getElementById('edgeDeduction').value||0,selfCut:+document.querySelectorAll('.deduction-input')[3].value||0},materialCategory:document.getElementById('productModel').value.trim().toUpperCase().startsWith('BD')?'BD特殊系列':(/\d+[黑棕黄红蓝绿白灰紫粉橙]/.test(document.getElementById('productModel').value)?'颜色料':'透明料/本色料'),totalUnreasonable:total,abnormalSubItems:subItems,createTime:new Date().toISOString()}; const records=storage.get(STORAGE.RECORDS)||[]; records.push(record); storage.set(STORAGE.RECORDS,records); e.target.reset(); document.getElementById('recordDate').value=getToday(); document.querySelectorAll('.deduction-input').forEach(i=>i.value=''); applyModelDeductions(); calcTotal(); renderPersonSelect(''); alert('提交成功'); refreshAll(); });
     // 管理事件
     document.getElementById('addLineBtn').addEventListener('click',()=>{ const name=prompt('生产线名称'); if(name && !storage.get(STORAGE.LINES).includes(name)){ storage.set(STORAGE.LINES,[...storage.get(STORAGE.LINES),name]); renderLineSelect(); renderLineManage(); refreshAll(); } });
-    document.getElementById('confirmAddLineBtn').addEventListener('click',()=>{ const name=document.getElementById('newLineInput').value.trim(); if(name && !storage.get(STORAGE.LINES).includes(name)){ storage.set(STORAGE.LINES,[...storage.get(STORAGE.LINES),name]); document.getElementById('newLineInput').value=''; renderLineSelect(); renderLineManage(); refreshAll(); } });
+    document.getElementById('confirmAddLineBtn').addEventListener('click',()=>{ const input=document.getElementById('newLineInput'), name=input.value.trim(), lines=storage.get(STORAGE.LINES)||[]; if(!name) return alert('请先输入生产线名称'); if(lines.includes(name)) return alert('该生产线已存在'); storage.set(STORAGE.LINES,[...lines,name]); input.value=''; renderLineSelect(); renderLineManage(); refreshAll(); });
     document.addEventListener('click',e=>{ if(e.target.closest('.delete-line')){ const line=e.target.closest('.delete-line').dataset.line; if(confirm(`删除${line}?`)){ storage.set(STORAGE.LINES,storage.get(STORAGE.LINES).filter(l=>l!==line)); renderLineSelect(); renderLineManage(); refreshAll(); } } });
     document.getElementById('addPersonBtn').addEventListener('click',()=>{ const team=document.getElementById('team').value; if(!team) return alert('先选班组'); const name=prompt(`添加${team}人员`); if(name){ const data=storage.get(STORAGE.PERSONS); if(!data[team].includes(name)){ data[team].push(name); storage.set(STORAGE.PERSONS,data); renderPersonSelect(team); renderPersonManage(); } } });
-    document.getElementById('confirmAddPersonBtn').addEventListener('click',()=>{ const name=document.getElementById('newPersonInput').value.trim(); if(name){ const data=storage.get(STORAGE.PERSONS); if(!data[currentManageTeam].includes(name)){ data[currentManageTeam].push(name); storage.set(STORAGE.PERSONS,data); renderPersonManage(); document.getElementById('newPersonInput').value=''; } } });
+    document.getElementById('confirmAddPersonBtn').addEventListener('click',()=>{
+      const input=document.getElementById('newPersonInput'), name=input.value.trim();
+      if(!name) return alert('请先输入人员姓名');
+      const data=storage.get(STORAGE.PERSONS)||{'A班':[],'B班':[]};
+      data[currentManageTeam]=data[currentManageTeam]||[];
+      if(data[currentManageTeam].includes(name)) return alert('该人员已存在');
+      data[currentManageTeam].push(name); storage.set(STORAGE.PERSONS,data);
+      input.value=''; renderPersonManage();
+      renderPersonSelect(document.getElementById('team').value);
+    });
     document.addEventListener('click',e=>{ if(e.target.closest('.delete-person')){ const btn=e.target.closest('.delete-person'); const team=btn.dataset.team, person=btn.dataset.person; if(confirm(`删除${team}的${person}?`)){ const data=storage.get(STORAGE.PERSONS); data[team]=data[team].filter(p=>p!==person); storage.set(STORAGE.PERSONS,data); renderPersonManage(); renderPersonSelect(document.getElementById('team').value); } } });
     document.getElementById('manageTeamATab').addEventListener('click',()=>{ currentManageTeam='A班'; renderPersonManage(); });
     document.getElementById('manageTeamBTab').addEventListener('click',()=>{ currentManageTeam='B班'; renderPersonManage(); });
+    document.querySelectorAll('[data-manage-target]').forEach(btn=>btn.addEventListener('click',()=>{
+      const target=btn.dataset.manageTarget;
+      document.querySelectorAll('[data-manage-target]').forEach(item=>item.classList.toggle('active',item===btn));
+      document.querySelectorAll('[data-manage-panel]').forEach(panel=>panel.hidden=panel.dataset.managePanel!==target);
+    }));
     document.getElementById('addTypeBtn').addEventListener('click',()=>{ const name=prompt('大类名称'); if(name){ const types=storage.get(STORAGE.TYPES); types.push({id:genId(),name,subItems:[]}); storage.set(STORAGE.TYPES,types); renderAbnormalTypes(); renderTypeManage(); } });
-    document.addEventListener('click',e=>{ if(e.target.closest('.delete-type')){ const id=e.target.closest('.delete-type').dataset.id; if(confirm('删除大类?')){ storage.set(STORAGE.TYPES,storage.get(STORAGE.TYPES).filter(t=>t.id!==id)); renderAbnormalTypes(); renderTypeManage(); } } if(e.target.closest('.add-subitem')){ const tid=e.target.closest('.add-subitem').dataset.id; const name=prompt('子项名称'); if(name){ const types=storage.get(STORAGE.TYPES); const idx=types.findIndex(t=>t.id===tid); if(idx!==-1){ types[idx].subItems.push(name); storage.set(STORAGE.TYPES,types); renderAbnormalTypes(); renderTypeManage(); } } } if(e.target.closest('.delete-subitem')){ const btn=e.target.closest('.delete-subitem'); const tid=btn.dataset.id, sidx=parseInt(btn.dataset.idx); const types=storage.get(STORAGE.TYPES); const idx=types.findIndex(t=>t.id===tid); if(idx!==-1){ types[idx].subItems.splice(sidx,1); storage.set(STORAGE.TYPES,types); renderAbnormalTypes(); renderTypeManage(); } } });
+    document.addEventListener('click',e=>{
+      const renameTypeBtn=e.target.closest('.rename-type');
+      if(renameTypeBtn){
+        const id=renameTypeBtn.dataset.id, types=storage.get(STORAGE.TYPES)||[], type=types.find(t=>t.id===id);
+        if(!type) return;
+        const oldName=type.name, nextName=(prompt('请输入新的大类名称',oldName)||'').trim();
+        if(!nextName||nextName===oldName) return;
+        if(types.some(t=>t.id!==id&&t.name===nextName)) return alert('该大类名称已存在');
+        type.name=nextName; storage.set(STORAGE.TYPES,types);
+        replaceHistoricalTypePrefix(oldName+'-',nextName+'-');
+        renderAbnormalTypes(); renderTypeManage(); renderRankAndCharts();
+        alert('大类名称已更新，历史记录中的对应类别名称也已同步。');
+        return;
+      }
+      const renameSubBtn=e.target.closest('.rename-subitem');
+      if(renameSubBtn){
+        const id=renameSubBtn.dataset.id, subIndex=Number(renameSubBtn.dataset.idx), types=storage.get(STORAGE.TYPES)||[], type=types.find(t=>t.id===id);
+        if(!type||!type.subItems[subIndex]) return;
+        const oldItem=type.subItems[subIndex], nextItem=(prompt('请输入新的子项目名称',oldItem)||'').trim();
+        if(!nextItem||nextItem===oldItem) return;
+        if(type.subItems.some((v,i)=>i!==subIndex&&v===nextItem)) return alert('该子项目已存在');
+        type.subItems[subIndex]=nextItem; storage.set(STORAGE.TYPES,types);
+        replaceHistoricalTypePrefix(type.name+'-'+oldItem,type.name+'-'+nextItem);
+        renderAbnormalTypes(); renderTypeManage(); renderRankAndCharts();
+        return;
+      }
+      const deleteTypeBtn=e.target.closest('.delete-type');
+      if(deleteTypeBtn){
+        const id=deleteTypeBtn.dataset.id;
+        if(confirm('删除大类？历史记录不会删除。')){storage.set(STORAGE.TYPES,(storage.get(STORAGE.TYPES)||[]).filter(t=>t.id!==id));renderAbnormalTypes();renderTypeManage();renderRankAndCharts();}
+        return;
+      }
+      const addSubBtn=e.target.closest('.add-subitem');
+      if(addSubBtn){
+        const tid=addSubBtn.dataset.id, name=(prompt('请输入子项目名称')||'').trim();
+        if(name){const types=storage.get(STORAGE.TYPES)||[],idx=types.findIndex(t=>t.id===tid);if(idx!==-1){if(types[idx].subItems.includes(name))return alert('该子项目已存在');types[idx].subItems.push(name);storage.set(STORAGE.TYPES,types);renderAbnormalTypes();renderTypeManage();}}
+        return;
+      }
+      const deleteSubBtn=e.target.closest('.delete-subitem');
+      if(deleteSubBtn){
+        const tid=deleteSubBtn.dataset.id, subIndex=Number(deleteSubBtn.dataset.idx), types=storage.get(STORAGE.TYPES)||[], idx=types.findIndex(t=>t.id===tid);
+        if(idx!==-1&&confirm('删除这个子项目？历史记录不会删除。')){types[idx].subItems.splice(subIndex,1);storage.set(STORAGE.TYPES,types);renderAbnormalTypes();renderTypeManage();renderRankAndCharts();}
+      }
+    });
     document.getElementById('searchRecord').addEventListener('input',e=>renderRecordTable(e.target.value));
     document.getElementById('refreshRecordBtn').addEventListener('click',()=>{ document.getElementById('searchRecord').value=''; renderRecordTable(); });
     document.addEventListener('click',e=>{ if(e.target.closest('.delete-record')){ const id=e.target.closest('.delete-record').dataset.id; if(confirm('删除记录?')){ const recs=storage.get(STORAGE.RECORDS).filter(r=>r.id!==id); storage.set(STORAGE.RECORDS,recs); refreshAll(); } } });
