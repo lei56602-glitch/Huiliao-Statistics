@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var xlsxLauncher: ActivityResultLauncher<String>
     private lateinit var csvLauncher: ActivityResultLauncher<String>
     private lateinit var backupLauncher: ActivityResultLauncher<String>
+    private lateinit var restoreLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var webView: WebView
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -47,6 +48,9 @@ class MainActivity : ComponentActivity() {
         backupLauncher = registerForActivityResult(
             ActivityResultContracts.CreateDocument("application/json")
         ) { uri -> writeExport(uri) }
+        restoreLauncher = registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri -> readBackup(uri) }
 
         // Handle system bars and display cutouts once at the native root.
         // The handled inset dimensions are zeroed before dispatching to WebView,
@@ -111,6 +115,14 @@ class MainActivity : ComponentActivity() {
     // Must be a public class for WebView's JavaScript bridge reflection.
     inner class ExportBridge {
         @JavascriptInterface
+        fun chooseBackup() {
+            runOnUiThread {
+                try { restoreLauncher.launch(arrayOf("application/json", "text/json", "application/octet-stream")) }
+                catch (e: Exception) { Toast.makeText(this@MainActivity, "无法打开备份文件选择器：" + e.message, Toast.LENGTH_LONG).show() }
+            }
+        }
+
+        @JavascriptInterface
         fun saveBackup(json: String, fileName: String) {
             try {
                 if (json.isBlank()) error("备份数据为空")
@@ -170,6 +182,19 @@ class MainActivity : ComponentActivity() {
                     Toast.makeText(this@MainActivity, "导出准备失败：${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
+        }
+    }
+
+    private fun readBackup(uri: Uri?) {
+        if (uri == null) return
+        try {
+            val json = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                ?: error("无法读取备份文件")
+            if (json.isBlank()) error("备份文件为空")
+            val quoted = org.json.JSONObject.quote(json)
+            webView.post { webView.evaluateJavascript("window.handleBackupRestoreResult(" + quoted + ");", null) }
+        } catch (e: Exception) {
+            Toast.makeText(this, "读取备份失败：" + e.message, Toast.LENGTH_LONG).show()
         }
     }
 
