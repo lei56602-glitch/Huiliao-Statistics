@@ -316,10 +316,10 @@
         <div class="space-y-2">
           <h3 class="font-semibold">合理扣减 (KG)</h3>
           <div class="grid grid-cols-2 gap-2">
-            <div><label>调机扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" value="0"></div>
-            <div><label>洗机扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" value="0"></div>
-            <div><label>百丝边料扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" value="0"></div>
-            <div><label>自割料扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" value="0"></div>
+            <div><label>调机扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0"></div>
+            <div><label>洗机扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0"></div>
+            <div><label>百丝边料扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0"></div>
+            <div><label>自割料扣减</label><input type="number" class="deduction-input input-liquid w-full rounded px-3 py-2" step="0.01" placeholder="0"></div>
           </div>
           <div class="glass-dark p-3 rounded"><div class="flex justify-between"><span class="font-semibold">最终不合理数量 (KG)</span><span id="totalUnreasonable" class="text-2xl font-bold text-danger">0.00</span></div><input type="hidden" id="totalUnreasonableInput" value="0"></div>
         </div>
@@ -409,7 +409,7 @@
   </section>
 
   <!-- 记录 -->
-  <section id="record" class="tab-content hidden"><div class="glass rounded-xl p-3"><div class="flex justify-between items-center flex-wrap gap-2 mb-3"><h2 class="text-lg font-bold">详细记录 <span id="recordMonthHint" class="text-sm font-normal"></span></h2><div class="flex gap-1"><input type="text" id="searchRecord" placeholder="搜索" class="input-liquid w-32 rounded px-3 py-1"><button id="refreshRecordBtn" class="px-3 py-1 bg-primary/10 rounded"><i class="fa fa-refresh"></i></button><button id="exportBtn" class="px-3 py-1 bg-success/10 text-success rounded"><i class="fa fa-download"></i> 导出链接</button><button id="backupBtn" class="px-3 py-1 bg-blue-50 text-primary rounded"><i class="fa fa-database"></i> 数据备份</button></div></div><div class="overflow-x-auto"><table class="w-full text-sm min-w-[800px]"><thead><tr><th>日期</th><th>线</th><th>班</th><th>人</th><th>型号</th><th>不合理(KG)</th><th>类型</th><th></th></tr></thead><tbody id="recordTableBody"></tbody></table></div><div id="emptyRecordTip" class="py-8 text-center text-gray-400 hidden"><i class="fa fa-inbox"></i> 暂无记录</div></div></section>
+  <section id="record" class="tab-content hidden"><div class="glass rounded-xl p-3"><div class="flex justify-between items-center flex-wrap gap-2 mb-3"><h2 class="text-lg font-bold">详细记录 <span id="recordMonthHint" class="text-sm font-normal"></span></h2><div class="flex gap-1"><input type="text" id="searchRecord" placeholder="搜索" class="input-liquid w-32 rounded px-3 py-1"><button id="refreshRecordBtn" class="px-3 py-1 bg-primary/10 rounded"><i class="fa fa-refresh"></i></button><button id="exportBtn" class="px-3 py-1 bg-success/10 text-success rounded"><i class="fa fa-download"></i> 导出链接</button><button id="backupBtn" class="px-3 py-1 bg-blue-50 text-primary rounded"><i class="fa fa-database"></i> 数据备份</button><button id="restoreBtn" class="px-3 py-1 bg-amber-50 text-amber-700 rounded"><i class="fa fa-undo"></i> 恢复数据</button></div></div><div class="overflow-x-auto"><table class="w-full text-sm min-w-[800px]"><thead><tr><th>日期</th><th>线</th><th>班</th><th>人</th><th>型号</th><th>不合理(KG)</th><th>类型</th><th></th></tr></thead><tbody id="recordTableBody"></tbody></table></div><div id="emptyRecordTip" class="py-8 text-center text-gray-400 hidden"><i class="fa fa-inbox"></i> 暂无记录</div></div></section>
 
   <!-- 管理 -->
   <section id="manage" class="tab-content hidden"><div class="grid lg:grid-cols-3 gap-3"><div class="glass rounded-xl p-3 lg:col-span-2"><div class="flex justify-between"><h2 class="font-bold">异常类型</h2><button id="addTypeBtn" class="bg-primary text-white px-3 py-1 rounded">+ 大类</button></div><div id="typeManageContainer" class="space-y-3 mt-2"></div></div><div class="space-y-3"><div class="glass p-3"><h2 class="font-bold">生产线</h2><div id="lineManageContainer" class="space-y-2 my-2"></div><div class="flex gap-1"><input id="newLineInput" placeholder="名称" class="input-liquid flex-1 rounded px-3 py-1"><button id="confirmAddLineBtn" class="bg-primary text-white px-3 py-1 rounded">+</button></div></div><div class="glass p-3"><h2 class="font-bold">人员</h2><div class="flex border rounded overflow-hidden mb-2"><button id="manageTeamATab" class="flex-1 py-1 bg-teamA/10 text-teamA">A班</button><button id="manageTeamBTab" class="flex-1 py-1 text-gray-500">B班</button></div><div id="personManageContainer" class="space-y-2"></div><div class="flex gap-1 mt-2"><input id="newPersonInput" placeholder="姓名" class="input-liquid flex-1 rounded px-3 py-1"><button id="confirmAddPersonBtn" class="bg-teamA text-white px-3 py-1 rounded">+</button></div></div></div></div></section>
@@ -781,6 +781,28 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function restoreBackupFromJson(jsonText) {
+    try {
+      const backup = JSON.parse(jsonText);
+      if (!backup || backup.app !== '回收料统计' || backup.formatVersion !== 1 || !backup.data) throw new Error('备份文件格式不正确或版本不支持');
+      const data = backup.data;
+      const types = data[STORAGE.TYPES], lines = data[STORAGE.LINES], persons = data[STORAGE.PERSONS], records = data[STORAGE.RECORDS];
+      if (!Array.isArray(types) || !Array.isArray(lines) || !persons || !Array.isArray(persons['A班']) || !Array.isArray(persons['B班']) || !Array.isArray(records)) throw new Error('备份文件缺少必要数据，无法恢复');
+      const validRecords = records.every(r => r && typeof r === 'object' && r.id && r.date && r.productionLine && r.team && r.personnel && Array.isArray(r.abnormalSubItems));
+      if (!validRecords) throw new Error('备份中的记录数据不完整，已取消恢复');
+      if (!confirm('恢复数据将用备份文件中的全部记录、生产线、人员和异常类型替换当前数据。当前数据会被覆盖，确定继续吗？')) return;
+      storage.set(STORAGE.TYPES, types);
+      storage.set(STORAGE.LINES, lines);
+      storage.set(STORAGE.PERSONS, persons);
+      storage.set(STORAGE.RECORDS, records);
+      renderLineSelect(); renderPersonSelect(''); renderAbnormalTypes(); renderLineManage(); renderPersonManage(); renderTypeManage(); refreshAll();
+      alert('数据恢复成功，共恢复 ' + records.length + ' 条记录。');
+    } catch (error) {
+      alert('恢复失败：' + (error && error.message ? error.message : error));
+    }
+  }
+  window.handleBackupRestoreResult = restoreBackupFromJson;
+
   function setExportFormat(fmt) { currentFormat=fmt; const excelBtn=document.getElementById('switchExcelBtn'), csvBtn=document.getElementById('switchCsvBtn'); if(fmt==='excel'){ excelBtn.className='px-4 py-2 rounded-full bg-primary text-white'; csvBtn.className='px-4 py-2 rounded-full bg-gray-200'; } else { csvBtn.className='px-4 py-2 rounded-full bg-primary text-white'; excelBtn.className='px-4 py-2 rounded-full bg-gray-200'; } }
 
   // 悬浮提交逻辑
@@ -809,7 +831,7 @@
     document.querySelectorAll('.deduction-input').forEach(i=>i.addEventListener('input',calcTotal));
     document.getElementById('team').addEventListener('change',e=>renderPersonSelect(e.target.value));
     // 表单提交
-    document.getElementById('abnormalForm').addEventListener('submit',e=>{ e.preventDefault(); const date=document.getElementById('recordDate').value, line=document.getElementById('productionLine').value, team=document.getElementById('team').value, person=document.getElementById('personnel').value; if(!date||!line||!team||!person) return alert('请填写完整信息'); const subItems=Array.from(document.querySelectorAll('input[name="abnormalSubItem"]:checked')).map(cb=>cb.value); if(!subItems.length) return alert('至少选一个异常类型'); const total=document.getElementById('totalUnreasonableInput').value; if(+total<=0) return alert('不合理总量必须>0'); const record={id:genId(),date,productionLine:line,team,personnel:person,productModel:document.getElementById('productModel').value,productWeight:document.getElementById('productWeight').value,totalUnreasonable:total,abnormalSubItems:subItems,createTime:new Date().toISOString()}; const records=storage.get(STORAGE.RECORDS)||[]; records.push(record); storage.set(STORAGE.RECORDS,records); e.target.reset(); document.getElementById('recordDate').value=getToday(); document.querySelectorAll('.deduction-input').forEach(i=>i.value='0'); calcTotal(); renderPersonSelect(''); alert('提交成功'); refreshAll(); });
+    document.getElementById('abnormalForm').addEventListener('submit',e=>{ e.preventDefault(); const date=document.getElementById('recordDate').value, line=document.getElementById('productionLine').value, team=document.getElementById('team').value, person=document.getElementById('personnel').value; if(!date||!line||!team||!person) return alert('请填写完整信息'); const subItems=Array.from(document.querySelectorAll('input[name="abnormalSubItem"]:checked')).map(cb=>cb.value); if(!subItems.length) return alert('至少选一个异常类型'); const total=document.getElementById('totalUnreasonableInput').value; if(+total<=0) return alert('不合理总量必须>0'); const record={id:genId(),date,productionLine:line,team,personnel:person,productModel:document.getElementById('productModel').value,productWeight:document.getElementById('productWeight').value,totalUnreasonable:total,abnormalSubItems:subItems,createTime:new Date().toISOString()}; const records=storage.get(STORAGE.RECORDS)||[]; records.push(record); storage.set(STORAGE.RECORDS,records); e.target.reset(); document.getElementById('recordDate').value=getToday(); document.querySelectorAll('.deduction-input').forEach(i=>i.value=''); calcTotal(); renderPersonSelect(''); alert('提交成功'); refreshAll(); });
     // 管理事件
     document.getElementById('addLineBtn').addEventListener('click',()=>{ const name=prompt('生产线名称'); if(name && !storage.get(STORAGE.LINES).includes(name)){ storage.set(STORAGE.LINES,[...storage.get(STORAGE.LINES),name]); renderLineSelect(); renderLineManage(); refreshAll(); } });
     document.getElementById('confirmAddLineBtn').addEventListener('click',()=>{ const name=document.getElementById('newLineInput').value.trim(); if(name && !storage.get(STORAGE.LINES).includes(name)){ storage.set(STORAGE.LINES,[...storage.get(STORAGE.LINES),name]); document.getElementById('newLineInput').value=''; renderLineSelect(); renderLineManage(); refreshAll(); } });
@@ -825,7 +847,7 @@
     document.getElementById('refreshRecordBtn').addEventListener('click',()=>{ document.getElementById('searchRecord').value=''; renderRecordTable(); });
     document.addEventListener('click',e=>{ if(e.target.closest('.delete-record')){ const id=e.target.closest('.delete-record').dataset.id; if(confirm('删除记录?')){ const recs=storage.get(STORAGE.RECORDS).filter(r=>r.id!==id); storage.set(STORAGE.RECORDS,recs); refreshAll(); } } });
     document.getElementById('exportBtn').addEventListener('click',handleExport);
-    document.getElementById('backupBtn').addEventListener('click',backupAllData);
+    document.getElementById('backupBtn').addEventListener('click',backupAllData);\n    document.getElementById('restoreBtn').addEventListener('click',()=>{ if(window.AndroidExport && typeof window.AndroidExport.chooseBackup==='function') window.AndroidExport.chooseBackup(); else alert('当前环境不支持选择备份文件'); });
     document.getElementById('saveExportBtn').addEventListener('click',saveExportFile);
     document.getElementById('closeExportBtn').addEventListener('click',closeExport);
     document.getElementById('switchExcelBtn').addEventListener('click',()=>setExportFormat('excel'));
