@@ -847,7 +847,8 @@
     document.getElementById('refreshRecordBtn').addEventListener('click',()=>{ document.getElementById('searchRecord').value=''; renderRecordTable(); });
     document.addEventListener('click',e=>{ if(e.target.closest('.delete-record')){ const id=e.target.closest('.delete-record').dataset.id; if(confirm('删除记录?')){ const recs=storage.get(STORAGE.RECORDS).filter(r=>r.id!==id); storage.set(STORAGE.RECORDS,recs); refreshAll(); } } });
     document.getElementById('exportBtn').addEventListener('click',handleExport);
-    document.getElementById('backupBtn').addEventListener('click',backupAllData);\n    document.getElementById('restoreBtn').addEventListener('click',()=>{ if(window.AndroidExport && typeof window.AndroidExport.chooseBackup==='function') window.AndroidExport.chooseBackup(); else alert('当前环境不支持选择备份文件'); });
+    document.getElementById('backupBtn').addEventListener('click',backupAllData);
+    document.getElementById('restoreBtn').addEventListener('click',()=>{ if(window.AndroidExport && typeof window.AndroidExport.chooseBackup==='function') window.AndroidExport.chooseBackup(); else alert('当前环境不支持选择备份文件'); });
     document.getElementById('saveExportBtn').addEventListener('click',saveExportFile);
     document.getElementById('closeExportBtn').addEventListener('click',closeExport);
     document.getElementById('switchExcelBtn').addEventListener('click',()=>setExportFormat('excel'));
